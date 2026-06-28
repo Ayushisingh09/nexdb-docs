@@ -3,264 +3,664 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>API Reference — NexDB</title>
-  <meta name="description" content="Complete API reference for NexDB — NexDb, Collection, Document, QueryBuilder, WAL, Index, MigrationEngine, Server, Analytics, and Error handling.">
+  <title>API Reference — NexDB Documentation</title>
+  <meta name="description" content="Complete API reference for NexDB in Rust, Python, and Node.js. Database handles, collection CRUD, WAL checkpointing, indexing, and TCP commands.">
   <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23f54242'/><path d='M10 10h4l4 12 4-12h4' stroke='%23fff' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23ef4444'/><path d='M10 10h4l4 12 4-12h4' stroke='%23fff' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 </head>
 <body>
 
 <nav class="navbar">
   <div class="container">
-    <a href="/" class="logo">
-      <span class="logo-mark"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+    <a href="index.html" class="logo">
+      <span class="logo-mark">
+        <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
       Nex<span style="color:var(--red)">DB</span>
     </a>
     <div class="nav-links">
-      <a href="/">Home</a>
+      <a href="index.html">Home</a>
       <a href="getting-started.html">Docs</a>
       <a href="api.html" class="active">API</a>
       <a href="architecture.html">Architecture</a>
       <a href="https://github.com/Ayushisingh09/NexDB-Core" target="_blank">GitHub</a>
-      <a href="getting-started.html" class="nav-cta">Get Started</a>
+      
+      <!-- Global Language Switcher in Navbar -->
+      <div class="nav-lang-picker">
+        <button class="nav-lang-btn" data-lang="rust">Rust</button>
+        <button class="nav-lang-btn" data-lang="python">Python</button>
+        <button class="nav-lang-btn" data-lang="nodejs">Node.js</button>
+      </div>
+
+      <a href="getting-started.html" class="nav-cta btn">Get Started</a>
     </div>
   </div>
 </nav>
 
 <div class="container docs-layout">
   <aside class="docs-sidebar">
-    <h3>Reference</h3>
+    <h3>Instance Control</h3>
     <ul>
-      <li><a href="#nexdb">NexDb</a></li>
-      <li><a href="#collection">Collection</a></li>
-      <li><a href="#document">Document</a></li>
-      <li><a href="#query-builder">QueryBuilder</a></li>
-      <li><a href="#wal">WAL</a></li>
-      <li><a href="#index">Index</a></li>
-      <li><a href="#migrate">MigrationEngine</a></li>
-      <li><a href="#server">Server</a></li>
-      <li><a href="#analytics">Analytics</a></li>
-      <li><a href="#error">Error Handling</a></li>
+      <li><a href="#open">open</a></li>
+      <li><a href="#collection-mgmt">collections</a></li>
+      <li><a href="#wal-mgmt">wal flush</a></li>
+    </ul>
+    <h3>CRUD Operations</h3>
+    <ul>
+      <li><a href="#insert">insert</a></li>
+      <li><a href="#insert-auto">insert_auto_id</a></li>
+      <li><a href="#get">get</a></li>
+      <li><a href="#update">update</a></li>
+      <li><a href="#delete">delete</a></li>
+      <li><a href="#count">count</a></li>
+    </ul>
+    <h3>Query & Indexing</h3>
+    <ul>
+      <li><a href="#find">query find</a></li>
+      <li><a href="#indexing">index mgmt</a></li>
+    </ul>
+    <h3>Data Portability</h3>
+    <ul>
+      <li><a href="#migrate">migrate</a></li>
+    </ul>
+    <h3>JSON Protocols</h3>
+    <ul>
+      <li><a href="#tcp">tcp protocols</a></li>
     </ul>
   </aside>
 
   <article class="docs-content">
-
     <h1>API Reference</h1>
-    <p class="lead">Complete reference for the NexDB public API, from the top-level <code>NexDb</code> handle to the query builder, TCP server, and migration engine.</p>
+    <p class="lead">Complete reference guide for NexDB developer APIs, covering database creation, collection CRUD methods, indexing, migrations, and remote TCP sockets.</p>
 
-    <section id="nexdb">
-      <h2>NexDb</h2>
-      <p>The top-level database handle. All operations begin here.</p>
+    <!-- Language indicator alert at top of docs -->
+    <div class="docs-lang-indicator">
+      <span class="docs-lang-label">Viewing examples in:</span>
+      <div class="docs-lang-options">
+        <button class="docs-lang-option" data-lang="rust">Rust</button>
+        <button class="docs-lang-option" data-lang="python">Python</button>
+        <button class="docs-lang-option" data-lang="nodejs">Node.js</button>
+      </div>
+    </div>
 
-      <h3><code>NexDb::open(path: &amp;str) -> Result&lt;Self&gt;</code></h3>
-      <p>Opens an existing database or creates a new one at the given path. The accompanying WAL file (<code>path.wal</code>) is replayed automatically on startup for crash recovery.</p>
+    <section id="open">
+      <h2>Open Database</h2>
+      <p>Initiate the database instance. Opens an existing database or creates a new one at the path. Replays the WAL automatically on startup for crash recovery.</p>
 
-      <h3><code>db.collection(name: &amp;str) -> Collection</code></h3>
-      <p>Returns a handle to a named collection. Creates the collection if it does not already exist.</p>
-
-      <h3><code>db.checkpoint() -> Result&lt;()&gt;</code></h3>
-      <p>Creates a full snapshot of all in-memory collections and truncates the WAL file. Call periodically to keep WAL growth bounded.</p>
-
-      <h3><code>db.analytics() -> AnalyticsCollector</code></h3>
-      <p>Returns an analytics collector that tracks document counts, operation counts, and cache metrics.</p>
-
-      <h3><code>db.list_collections() -> Result&lt;Vec&lt;String&gt;&gt;</code></h3>
-      <p>Returns a list of all collection names in the database.</p>
+      <div class="code-tabs">
+        <div class="code-tabs-header">
+          <span class="code-tabs-title">open-database</span>
+          <div class="code-tabs-nav">
+            <button class="code-tab-btn" data-lang="rust">Rust</button>
+            <button class="code-tab-btn" data-lang="python">Python</button>
+            <button class="code-tab-btn" data-lang="nodejs">Node.js</button>
+          </div>
+          <button class="copy-code-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <div class="code-tabs-body">
+          <div class="code-tab-content" data-lang="rust">
+            <pre><code class="language-rust">// Signature: pub async fn open(path: impl AsRef<Path>) -> NexDbResult<Self>
+let db = NexDb::open("app.nex").await?;</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="python">
+            <pre><code class="language-python"># Signature: NexDb(db_path: str)
+db = NexDb('app.nex')
+db.connect() # Initiates subprocess connection</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="nodejs">
+            <pre><code class="language-javascript">// Signature: constructor(dbPath: string)
+const db = new NexDb('app.nex');
+await db.connect(); // Starts subprocess connection</code></pre>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <section id="collection">
-      <h2>Collection</h2>
-      <p>A named group of documents. Obtained via <code>db.collection(name)</code>.</p>
+    <section id="collection-mgmt">
+      <h2>Collection Management</h2>
+      <p>Manually create, drop, check, and list collection tables in the database.</p>
 
-      <h3><code>collection.insert(doc: Value) -> Result&lt;String&gt;</code></h3>
-      <p>Inserts a JSON document. Returns the auto-generated <code>_id</code> (UUID v4). Provide your own <code>_id</code> in the document to override.</p>
+      <div class="code-tabs">
+        <div class="code-tabs-header">
+          <span class="code-tabs-title">collections-api</span>
+          <div class="code-tabs-nav">
+            <button class="code-tab-btn" data-lang="rust">Rust</button>
+            <button class="code-tab-btn" data-lang="python">Python</button>
+            <button class="code-tab-btn" data-lang="nodejs">Node.js</button>
+          </div>
+          <button class="copy-code-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <div class="code-tabs-body">
+          <div class="code-tab-content" data-lang="rust">
+            <pre><code class="language-rust">// Explicitly create collection
+db.create_collection("users").await?;
 
-      <h3><code>collection.get(id: &amp;str) -> Result&lt;Value&gt;</code></h3>
-      <p>Retrieves a document by ID. Returns <code>Err(NotFound)</code> if the document does not exist.</p>
+// Drop collection
+db.drop_collection("users").await?;
 
-      <h3><code>collection.update(id: &amp;str, doc: Value) -> Result&lt;()&gt;</code></h3>
-      <p>Replaces the document at <code>id</code> with the new value.</p>
+// Check collection existence
+let exists = db.has_collection("users").await; // returns bool
 
-      <h3><code>collection.delete(id: &amp;str) -> Result&lt;()&gt;</code></h3>
-      <p>Deletes the document at <code>id</code>.</p>
+// List all collection names
+let list = db.list_collections().await; // returns Vec&lt;String&gt;</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="python">
+            <pre><code class="language-python"># Create collection
+db.create_collection('users')
 
-      <h3><code>collection.all() -> Result&lt;Vec&lt;Value&gt;&gt;</code></h3>
-      <p>Returns every document in the collection.</p>
+# Drop collection
+db.drop_collection('users')
 
-      <h3><code>collection.count() -> Result&lt;usize&gt;</code></h3>
-      <p>Returns the number of documents in the collection.</p>
+# List collections
+cols = db.list_collections() # returns list of strings</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="nodejs">
+            <pre><code class="language-javascript">// Create collection
+await db.createCollection('users');
 
-      <h3><code>collection.query() -> QueryBuilder</code></h3>
-      <p>Returns a <code>QueryBuilder</code> for filtered, sorted, and paginated queries.</p>
+// Drop collection
+await db.dropCollection('users');
 
-      <h3><code>collection.exists(id: &amp;str) -> Result&lt;bool&gt;</code></h3>
-      <p>Checks whether a document with the given ID exists.</p>
-
-      <h3><code>collection.create_index(field: &amp;str) -> Result&lt;()&gt;</code></h3>
-      <p>Creates a B-tree index on the specified field path, for example <code>"age"</code> or <code>"address.city"</code>.</p>
-
-      <h3><code>collection.drop_index(field: &amp;str) -> Result&lt;()&gt;</code></h3>
-      <p>Drops the index on the given field.</p>
-
-      <h3><code>collection.list_indexes() -> Result&lt;Vec&lt;String&gt;&gt;</code></h3>
-      <p>Lists all indexed field names for the collection.</p>
+// List collections
+const cols = await db.listCollections(); // returns Array</code></pre>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <section id="document">
-      <h2>Document</h2>
-      <p>Documents are stored as <code>serde_json::Value</code>. Every document includes an <code>_id</code> field, auto-generated as a UUID v4 when not provided on insert.</p>
-      <pre><code>{
-  "_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  "name": "Alice",
-  "age": 30,
-  "address": { "city": "Berlin", "zip": "10115" },
-  "tags": ["rust", "database"]
-}</code></pre>
-      <p>Documents can contain nested objects, arrays, strings, numbers, booleans, and null values — anything <code>serde_json::Value</code> supports.</p>
+    <section id="wal-mgmt">
+      <h2>WAL Control & Checkpoint</h2>
+      <p>Checkpoint commits all in-memory changes into database snapshots and flushes the Write-Ahead Log.</p>
+
+      <div class="code-tabs">
+        <div class="code-tabs-header">
+          <span class="code-tabs-title">checkpoint-api</span>
+          <div class="code-tabs-nav">
+            <button class="code-tab-btn" data-lang="rust">Rust</button>
+            <button class="code-tab-btn" data-lang="python">Python</button>
+            <button class="code-tab-btn" data-lang="nodejs">Node.js</button>
+          </div>
+          <button class="copy-code-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <div class="code-tabs-body">
+          <div class="code-tab-content" data-lang="rust">
+            <pre><code class="language-rust">// Forces WAL flush to disk
+db.flush().await?;
+
+// WAL Checkpoint: Snapshots in-memory collections and truncates WAL log file
+db.checkpoint().await?;</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="python">
+            <pre><code class="language-python"># Flush WAL changes to disk
+db.flush()</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="nodejs">
+            <pre><code class="language-javascript">// Flush changes to disk
+await db.flush();</code></pre>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <section id="query-builder">
-      <h2>QueryBuilder</h2>
-      <p>Fluent builder for composing queries. Obtained via <code>collection.query()</code>.</p>
+    <hr style="border-color: var(--border); margin: 40px 0;">
 
-      <h3><code>builder.where_clause(json_str: &amp;str) -> Result&lt;Self&gt;</code></h3>
-      <p>Sets the filter from a JSON string. Supports operators: <code>$eq</code>, <code>$ne</code>, <code>$gt</code>, <code>$gte</code>, <code>$lt</code>, <code>$lte</code>, <code>$in</code>, <code>$nin</code>, <code>$exists</code>, <code>$regex</code>.</p>
+    <section id="insert">
+      <h2>Insert Document</h2>
+      <p>Insert a JSON document under a custom collection table with an explicit string ID key.</p>
 
-      <h3><code>builder.where_value(filter: &amp;Value) -> Result&lt;Self&gt;</code></h3>
-      <p>Sets the filter from a pre-parsed <code>serde_json::Value</code>.</p>
-
-      <h3><code>builder.sort(field: &amp;str, ascending: bool) -> Self</code></h3>
-      <p>Adds a sort order. May be chained for multi-field sorting.</p>
-
-      <h3><code>builder.skip(n: usize) -> Self</code></h3>
-      <p>Skips the first <code>n</code> results (for pagination).</p>
-
-      <h3><code>builder.limit(n: usize) -> Self</code></h3>
-      <p>Limits results to at most <code>n</code> documents.</p>
-
-      <h3><code>builder.run() -> Result&lt;Vec&lt;Value&gt;&gt;</code></h3>
-      <p>Executes the query and returns matching documents.</p>
-
-      <pre><code>let results = collection
-    .query()
-    .where_clause(r#"{"age": {"$gte": 18, "$lt": 99}}"#)?
-    .sort("age", true)
-    .skip(0)
-    .limit(50)
-    .run()?;</code></pre>
+      <div class="code-tabs">
+        <div class="code-tabs-header">
+          <span class="code-tabs-title">insert-api</span>
+          <div class="code-tabs-nav">
+            <button class="code-tab-btn" data-lang="rust">Rust</button>
+            <button class="code-tab-btn" data-lang="python">Python</button>
+            <button class="code-tab-btn" data-lang="nodejs">Node.js</button>
+          </div>
+          <button class="copy-code-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <div class="code-tabs-body">
+          <div class="code-tab-content" data-lang="rust">
+            <pre><code class="language-rust">// Signature: pub async fn insert(&self, collection: &str, id: &str, doc: Document) -> NexDbResult<()>
+let doc = Document::from_value(serde_json::json!({
+    "name": "Jane", 
+    "role": "admin"
+}));
+db.insert("users", "u2", doc).await?;</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="python">
+            <pre><code class="language-python"># Signature: insert(collection: str, id: str, document: dict)
+db.insert('users', 'u2', {
+    'name': 'Jane',
+    'role': 'admin'
+})</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="nodejs">
+            <pre><code class="language-javascript">// Signature: insert(collection: string, id: string, doc: object)
+await db.insert('users', 'u2', {
+  name: 'Jane',
+  role: 'admin'
+});</code></pre>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <section id="wal">
-      <h2>WAL</h2>
-      <p>The write-ahead log ensures durability. Every mutation is appended to the WAL <em>before</em> it is applied in memory.</p>
+    <section id="insert-auto">
+      <h2>Insert with Auto-Generated ID</h2>
+      <p>Insert document and generate a new UUIDv4 key automatically.</p>
 
-      <h3><code>db.checkpoint() -> Result&lt;()&gt;</code></h3>
-      <p>Creates a snapshot of the full in-memory state and truncates the WAL. Bounds WAL size without sacrificing safety.</p>
-
-      <h3>Automatic recovery</h3>
-      <p>On <code>NexDb::open()</code>, any WAL entries not yet reflected in the database are replayed automatically. This process is invisible to the caller.</p>
-
-      <h3>WAL file format</h3>
-      <p>The WAL is stored at <code>dbname.nex.wal</code>. Each line is a JSON object encoding one mutation:</p>
-      <pre><code>{"type":"Insert","id":"uuid","document":{...}}
-{"type":"Update","id":"uuid","document":{...}}
-{"type":"Delete","id":"uuid"}</code></pre>
+      <div class="code-tabs">
+        <div class="code-tabs-header">
+          <span class="code-tabs-title">insert-auto-id</span>
+          <div class="code-tabs-nav">
+            <button class="code-tab-btn" data-lang="rust">Rust</button>
+            <button class="code-tab-btn" data-lang="python">Python</button>
+            <button class="code-tab-btn" data-lang="nodejs">Node.js</button>
+          </div>
+          <button class="copy-code-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <div class="code-tabs-body">
+          <div class="code-tab-content" data-lang="rust">
+            <pre><code class="language-rust">// Signature: pub async fn insert_auto_id(&self, collection: &str, doc: Document) -> NexDbResult<String>
+let doc = Document::from_value(serde_json::json!({"item": "pen", "price": 1.5}));
+let generated_id = db.insert_auto_id("products", doc).await?; // returns String</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="python">
+            <pre><code class="language-python"># Signature: insert_auto_id(collection: str, document: dict) -> str
+generated_id = db.insert_auto_id('products', {'item': 'pen', 'price': 1.5})</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="nodejs">
+            <pre><code class="language-javascript">// Signature: insertAutoId(collection: string, doc: object) -> Promise<string>
+const generatedId = await db.insertAutoId('products', { item: 'pen', price: 1.5 });</code></pre>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <section id="index">
-      <h2>Index</h2>
-      <p>In-memory B-tree indexes for accelerating queries on document fields. Indexes are maintained automatically — when a document is inserted, updated, or deleted, every index for that collection is updated transparently.</p>
-      <p>When a query filter includes an indexed field, the engine narrows results via the index (<code>O(log n)</code>) before applying any remaining filter conditions.</p>
-      <p>Functions: <code>create_index(field)</code>, <code>drop_index(field)</code>, <code>list_indexes()</code> — all available on <code>Collection</code>.</p>
+    <section id="get">
+      <h2>Get Document</h2>
+      <p>Retrieve document contents matching the unique ID.</p>
+
+      <div class="code-tabs">
+        <div class="code-tabs-header">
+          <span class="code-tabs-title">get-api</span>
+          <div class="code-tabs-nav">
+            <button class="code-tab-btn" data-lang="rust">Rust</button>
+            <button class="code-tab-btn" data-lang="python">Python</button>
+            <button class="code-tab-btn" data-lang="nodejs">Node.js</button>
+          </div>
+          <button class="copy-code-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <div class="code-tabs-body">
+          <div class="code-tab-content" data-lang="rust">
+            <pre><code class="language-rust">// Signature: pub async fn get(&self, collection: &str, id: &str) -> NexDbResult<Document>
+let doc = db.get("users", "u2").await?; // returns Document</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="python">
+            <pre><code class="language-python"># Signature: get(collection: str, id: str) -> dict
+doc = db.get('users', 'u2') # returns dict</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="nodejs">
+            <pre><code class="language-javascript">// Signature: get(collection: string, id: string) -> Promise<object>
+const doc = await db.get('users', 'u2'); // returns object</code></pre>
+          </div>
+        </div>
+      </div>
     </section>
+
+    <section id="update">
+      <h2>Update Document</h2>
+      <p>Replace existing document fields matching the ID with new values.</p>
+
+      <div class="code-tabs">
+        <div class="code-tabs-header">
+          <span class="code-tabs-title">update-api</span>
+          <div class="code-tabs-nav">
+            <button class="code-tab-btn" data-lang="rust">Rust</button>
+            <button class="code-tab-btn" data-lang="python">Python</button>
+            <button class="code-tab-btn" data-lang="nodejs">Node.js</button>
+          </div>
+          <button class="copy-code-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <div class="code-tabs-body">
+          <div class="code-tab-content" data-lang="rust">
+            <pre><code class="language-rust">// Signature: pub async fn update(&self, collection: &str, id: &str, doc: Document) -> NexDbResult<()>
+let updated_doc = Document::from_value(serde_json::json!({
+    "name": "Jane Doe", 
+    "role": "superadmin"
+}));
+db.update("users", "u2", updated_doc).await?;</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="python">
+            <pre><code class="language-python"># Signature: update(collection: str, id: str, document: dict)
+db.update('users', 'u2', {
+    'name': 'Jane Doe',
+    'role': 'superadmin'
+})</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="nodejs">
+            <pre><code class="language-javascript">// Signature: update(collection: string, id: string, doc: object)
+await db.update('users', 'u2', {
+  name: 'Jane Doe',
+  role: 'superadmin'
+});</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="delete">
+      <h2>Delete Document</h2>
+      <p>Remove document matching ID from collection.</p>
+
+      <div class="code-tabs">
+        <div class="code-tabs-header">
+          <span class="code-tabs-title">delete-api</span>
+          <div class="code-tabs-nav">
+            <button class="code-tab-btn" data-lang="rust">Rust</button>
+            <button class="code-tab-btn" data-lang="python">Python</button>
+            <button class="code-tab-btn" data-lang="nodejs">Node.js</button>
+          </div>
+          <button class="copy-code-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <div class="code-tabs-body">
+          <div class="code-tab-content" data-lang="rust">
+            <pre><code class="language-rust">// Signature: pub async fn delete(&self, collection: &str, id: &str) -> NexDbResult<()>
+db.delete("users", "u2").await?;</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="python">
+            <pre><code class="language-python"># Signature: delete(collection: str, id: str)
+db.delete('users', 'u2')</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="nodejs">
+            <pre><code class="language-javascript">// Signature: delete(collection: string, id: string)
+await db.delete('users', 'u2');</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="count">
+      <h2>Count Collection</h2>
+      <p>Returns the total number of documents inside the collection.</p>
+
+      <div class="code-tabs">
+        <div class="code-tabs-header">
+          <span class="code-tabs-title">count-api</span>
+          <div class="code-tabs-nav">
+            <button class="code-tab-btn" data-lang="rust">Rust</button>
+            <button class="code-tab-btn" data-lang="python">Python</button>
+            <button class="code-tab-btn" data-lang="nodejs">Node.js</button>
+          </div>
+          <button class="copy-code-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <div class="code-tabs-body">
+          <div class="code-tab-content" data-lang="rust">
+            <pre><code class="language-rust">// Signature: pub async fn count(&self, collection: &str) -> NexDbResult<usize>
+let count = db.count("users").await?; // returns usize</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="python">
+            <pre><code class="language-python"># Signature: count(collection: str) -> int
+count = db.count('users') # returns int</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="nodejs">
+            <pre><code class="language-javascript">// Signature: count(collection: string) -> Promise<number>
+const count = await db.count('users'); // returns number</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr style="border-color: var(--border); margin: 40px 0;">
+
+    <section id="find">
+      <h2>Queries & Filter Lookups</h2>
+      <p>Queries allow scanning collections for documents matching search conditions. Natively in Rust, define query filters and match them against documents inside a search block.</p>
+
+      <div class="code-tabs">
+        <div class="code-tabs-header">
+          <span class="code-tabs-title">query-api</span>
+          <div class="code-tabs-nav">
+            <button class="code-tab-btn" data-lang="rust">Rust</button>
+            <button class="code-tab-btn" data-lang="python">Python</button>
+            <button class="code-tab-btn" data-lang="nodejs">Node.js</button>
+          </div>
+          <button class="copy-code-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <div class="code-tabs-body">
+          <div class="code-tab-content" data-lang="rust">
+            <p>Using the Rust Query builder, match documents, and apply pagination constraints:</p>
+            <pre><code class="language-rust">use nexdb::query::{Query, SortOrder};
+
+// Create a query builder specification
+let q = Query::new("users")
+    .eq("role", "admin")
+    .gt("age", 21)
+    .sort("name", SortOrder::Asc)
+    .limit(10);
+
+// Find matching documents using the predicate
+let raw_results = db.find("users", |doc| q.matches(doc)).await?;
+
+// Apply offset, limit, and sorting
+let final_results = q.apply_to(raw_results); // returns Vec&lt;(String, Document)&gt;</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="python">
+            <p>To run dynamic queries in Python, host the database over the <strong>TCP Server mode</strong> and connect via TCP socket. Example using JSON commands:</p>
+            <pre><code class="language-python"># Connect over TCP to run query
+import socket
+import json
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect(('127.0.0.1', 9480))
+
+# Find query command
+request = {
+    "cmd": "find",
+    "args": {
+        "collection": "users",
+        "query": {
+            "filter": {"role": "admin", "age": {"$gt": 21}},
+            "sort": [{"name": 1}],
+            "limit": 10
+        }
+    }
+}
+s.sendall(json.dumps(request).encode() + b'\n')
+response = s.recv(4096).decode()
+print("Results:", json.loads(response))</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="nodejs">
+            <p>To run dynamic queries in Node.js, execute them over a TCP client socket against a running NexDB server:</p>
+            <pre><code class="language-javascript">const net = require('net');
+
+const client = net.createConnection({ port: 9480 }, () => {
+  const request = {
+    cmd: "find",
+    args: {
+      collection: "users",
+      query: {
+        filter: { role: "admin", age: { $gt: 21 } },
+        sort: [{ name: 1 }],
+        limit: 10
+      }
+    }
+  };
+  client.write(JSON.stringify(request) + '\n');
+});
+
+client.on('data', (data) => {
+  console.log('Results:', JSON.parse(data.toString()));
+  client.end();
+});</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="indexing">
+      <h2>Index Management</h2>
+      <p>Accelerate your search operations by declaring B-Tree index fields.</p>
+
+      <div class="code-tabs">
+        <div class="code-tabs-header">
+          <span class="code-tabs-title">index-api</span>
+          <div class="code-tabs-nav">
+            <button class="code-tab-btn" data-lang="rust">Rust</button>
+            <button class="code-tab-btn" data-lang="python">Python</button>
+            <button class="code-tab-btn" data-lang="nodejs">Node.js</button>
+          </div>
+          <button class="copy-code-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <div class="code-tabs-body">
+          <div class="code-tab-content" data-lang="rust">
+            <pre><code class="language-rust">// Signature: pub async fn create_index(&self, collection: &str, index_name: &str, field_path: &str) -> NexDbResult<()>
+db.create_index("users", "age_idx", "age").await?;
+
+// Signature: pub async fn drop_index(&self, collection: &str, index_name: &str) -> NexDbResult<()>
+db.drop_index("users", "age_idx").await?;</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="python">
+            <pre><code class="language-python"># Signature: create_index(collection: str, name: str, field: str)
+db.create_index('users', 'age_idx', 'age')</code></pre>
+          </div>
+          <div class="code-tab-content" data-lang="nodejs">
+            <pre><code class="language-javascript">// Signature: createIndex(collection: string, name: string, field: string)
+await db.createIndex('users', 'age_idx', 'age');</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr style="border-color: var(--border); margin: 40px 0;">
 
     <section id="migrate">
-      <h2>MigrationEngine</h2>
-      <p>Utilities for moving data between databases, creating backups, and generating SQL schemas.</p>
+      <h2>Data Portability (migrate)</h2>
+      <p>Perform backups, restores, and copy collections programmatically in Rust. These functions match the core `migrate` module capabilities.</p>
+      
+      <pre><code class="language-rust">use nexdb::migrate;
 
-      <h3><code>MigrationEngine::new(db: &amp;NexDb) -> Self</code></h3>
+// 1. Dump database collections to a manifest and series of JSON files
+let manifest = migrate::dump(&db, "./backup_dir/").await?;
+println!("Dumped {} collections ({} docs)", manifest.collections.len(), manifest.total_docs);
 
-      <h3><code>engine.dump_to_file(path: &amp;str) -> Result&lt;()&gt;</code></h3>
-      <p>Dumps all collections to a portable JSON interchange file with metadata.</p>
+// 2. Restore collections back from a directory
+let manifest = migrate::restore(&db, "./backup_dir/").await?;
 
-      <h3><code>engine.restore_from_file(path: &amp;str) -> Result&lt;()&gt;</code></h3>
-      <p>Restores all collections from a dump file into the database.</p>
+// 3. Copy collections directly from source to target DB
+let manifest = migrate::copy(&source_db, &target_db).await?;
 
-      <h3><code>engine.copy_to(target: &amp;NexDb) -> Result&lt;()&gt;</code></h3>
-      <p>Copies all collections from the current database to another.</p>
+// 4. Generate SQL CREATE TABLE and INSERT schema statements
+let sql_dump = migrate::to_sql(&db, "sqlite").await?; // pg, mysql, sqlite dialects
 
-      <h3><code>engine.to_sql() -> Result&lt;String&gt;</code></h3>
-      <p>Generates a SQL schema string with <code>CREATE TABLE</code> and <code>INSERT</code> statements.</p>
-
-      <h3><code>engine.auto_import(path: &amp;str) -> Result&lt;()&gt;</code></h3>
-      <p>Auto-detects the input format (JSON array, CSV with headers, or a dump file) and imports accordingly.</p>
+// 5. Import datasets auto-detecting file format (JSON/CSV)
+let count = migrate::auto_import(&db, "users", "source.csv").await?;</code></pre>
     </section>
 
-    <section id="server">
-      <h2>Server</h2>
-      <p>The built-in TCP server accepts JSON-line requests over a TCP socket. It can be configured programmatically or started from the CLI via <code>serve</code>.</p>
-
-      <h3><code>Server::new(db: NexDb) -> Self</code></h3>
-
-      <h3><code>server.with_auth(secret: &amp;str) -> Self</code></h3>
-      <p>Enables JWT authentication. Clients must include <code>"auth": "&lt;token&gt;"</code> in each request.</p>
-
-      <h3><code>server.serve(host: &amp;str, port: u16) -> Result&lt;()&gt;</code></h3>
-      <p>Starts the TCP server on the given host and port. Blocks the current thread.</p>
-
-      <h3>Request and response format</h3>
-      <pre><code>// request
-{
-  "method": "insert" | "get" | "update" | "delete" | "query" | "all" | "count",
-  "params": { ... },
-  "auth": "&lt;jwt_token&gt;"
-}
-
-// responses (one JSON line per request)
-{"ok": true, "id": "..."}          // insert
-{"ok": true, "document": {...}}     // get
-{"ok": true}                        // update / delete
-{"ok": true, "documents": [...]}    // query / all
-{"ok": true, "count": 42}           // count
-{"ok": false, "error": "..."}       // error</code></pre>
-    </section>
-
-    <section id="analytics">
-      <h2>Analytics</h2>
-      <p>Real-time usage statistics suitable for dashboards and monitoring.</p>
-
-      <h3><code>db.analytics() -> AnalyticsCollector</code></h3>
-
-      <h3><code>collector.snapshot() -> Result&lt;AnalyticsSnapshot&gt;</code></h3>
-      <p>Returns a snapshot containing:</p>
-      <table>
-        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+    <section id="tcp">
+      <h2>TCP Protocol Specifications</h2>
+      <p>The TCP server operates a lean JSON line-based protocol over sockets. All inputs must be single lines ending with newline characters (<code>\n</code>).</p>
+      
+      <h3>Request Envelope</h3>
+      <table style="width: 100%;">
+        <thead>
+          <tr>
+            <th>Key</th>
+            <th>Type</th>
+            <th>Necessity</th>
+            <th>Details</th>
+          </tr>
+        </thead>
         <tbody>
-          <tr><td><code>documents_total</code></td><td><code>u64</code></td><td>Total documents across all collections</td></tr>
-          <tr><td><code>collections_count</code></td><td><code>u64</code></td><td>Number of collections</td></tr>
-          <tr><td><code>operations_total</code></td><td><code>u64</code></td><td>Total operations performed</td></tr>
-          <tr><td><code>cache_hits</code></td><td><code>u64</code></td><td>Cache hit count</td></tr>
-          <tr><td><code>cache_misses</code></td><td><code>u64</code></td><td>Cache miss count</td></tr>
+          <tr>
+            <td><code>cmd</code></td>
+            <td><code>String</code></td>
+            <td>Required</td>
+            <td>Target command operation. E.g. <code>"insert"</code>, <code>"get"</code>, <code>"find"</code>.</td>
+          </tr>
+          <tr>
+            <td><code>args</code></td>
+            <td><code>Object</code></td>
+            <td>Optional</td>
+            <td>Parameters matching command parameters. E.g. <code>collection</code>, <code>id</code>.</td>
+          </tr>
+          <tr>
+            <td><code>api_key</code></td>
+            <td><code>String</code></td>
+            <td>Optional</td>
+            <td>Secret access credentials. Checked if auth configuration is enabled.</td>
+          </tr>
+          <tr>
+            <td><code>token</code></td>
+            <td><code>String</code></td>
+            <td>Optional</td>
+            <td>Token alternative for API key verification.</td>
+          </tr>
         </tbody>
       </table>
-    </section>
 
-    <section id="error">
-      <h2>Error Handling</h2>
-      <p>All fallible operations return <code>Result&lt;T, NexDbError&gt;</code>.</p>
-      <table>
-        <thead><tr><th>Variant</th><th>Description</th></tr></thead>
+      <h3>Response Envelope</h3>
+      <table style="width: 100%;">
+        <thead>
+          <tr>
+            <th>Key</th>
+            <th>Type</th>
+            <th>Details</th>
+          </tr>
+        </thead>
         <tbody>
-          <tr><td><code>NotFound</code></td><td>Document or collection not found</td></tr>
-          <tr><td><code>AlreadyExists</code></td><td>Duplicate index or document ID</td></tr>
-          <tr><td><code>InvalidId</code></td><td>Malformed or empty ID</td></tr>
-          <tr><td><code>InvalidFilter</code></td><td>Invalid query filter or unsupported operator</td></tr>
-          <tr><td><code>Storage</code></td><td>Underlying I/O or storage error</td></tr>
-          <tr><td><code>Serde</code></td><td>JSON serialization or deserialization error</td></tr>
-          <tr><td><code>Auth</code></td><td>Authentication failure (invalid JWT)</td></tr>
-          <tr><td><code>Config</code></td><td>Configuration or runtime environment error</td></tr>
-          <tr><td><code>Internal</code></td><td>Internal invariant violation</td></tr>
+          <tr>
+            <td><code>ok</code></td>
+            <td><code>Boolean</code></td>
+            <td>Declares if operation was processed successfully.</td>
+          </tr>
+          <tr>
+            <td><code>id</code></td>
+            <td><code>String</code></td>
+            <td>Inserted document UUID. Returned on <code>insert_auto_id</code> operations.</td>
+          </tr>
+          <tr>
+            <td><code>document</code></td>
+            <td><code>Object</code></td>
+            <td>Document matching key. Returned on <code>get</code> operations.</td>
+          </tr>
+          <tr>
+            <td><code>documents</code></td>
+            <td><code>Array</code></td>
+            <td>Array containing matching key-value objects. Returned on <code>find</code> operations.</td>
+          </tr>
+          <tr>
+            <td><code>count</code></td>
+            <td><code>Number</code></td>
+            <td>Number of collection items. Returned on <code>count</code> or query operations.</td>
+          </tr>
+          <tr>
+            <td><code>error</code></td>
+            <td><code>String</code></td>
+            <td>Details describing failure. Returned if <code>ok: false</code>.</td>
+          </tr>
         </tbody>
       </table>
     </section>
@@ -270,7 +670,7 @@
 
 <footer class="footer">
   <div class="container">
-    <div class="footer-copy">NexDB &mdash; MIT License</div>
+    <div class="footer-copy">NexDB Database Engine — MIT Licensed — Created for Ayushisingh09/NexDB</div>
     <div class="footer-links">
       <a href="https://github.com/Ayushisingh09/NexDB-Core" target="_blank">GitHub</a>
       <a href="getting-started.html">Docs</a>
