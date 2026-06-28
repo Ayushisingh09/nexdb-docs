@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexDb — The Next-Generation Embeddable Database</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">Nex<span>Db</span></a>
+            <div class="nav-links">
+                <a href="index.html" class="active">Home</a>
+                <a href="getting-started.html">Docs</a>
+                <a href="architecture.html">Architecture</a>
+                <a href="api.html">API</a>
+                <a href="https://github.com/nexdb/nexdb" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <h1>Fast as <span class="accent-redis">Redis</span>.
+                Secure as <span class="accent-sqlite">SQLite</span>.
+                Easy as <span class="accent-mongo">MongoDB</span>.
+                Powerful as <span class="accent-postgres">PostgreSQL</span>.</h1>
+            <p class="subtitle">A next-generation embeddable document database engineered in Rust.<br>
+                Zero GC, in-memory first, ACID-compliant, and schema-less.</p>
+            <div class="hero-buttons">
+                <a href="getting-started.html" class="btn btn-primary">Get Started</a>
+                <a href="architecture.html" class="btn btn-secondary">Architecture</a>
+            </div>
+            <div class="install-cmd">
+                <span class="prompt">$</span> cargo add nexdb
+                <span class="divider">|</span>
+                <span class="prompt">$</span> npm install nexdb
+                <span class="divider">|</span>
+                <span class="prompt">$</span> pip install nexdb
+            </div>
+        </div>
+    </header>
+
+    <section class="features">
+        <div class="container">
+            <h2>Four Pillars. One Database.</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="icon lightning"></div>
+                    <h3>Blazing Fast</h3>
+                    <p>In-memory first architecture with sub-millisecond latencies. Powered by Rust's zero-cost abstractions and <code>BTreeMap</code>-backed storage.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon shield"></div>
+                    <h3>Rock Solid</h3>
+                    <p>Write-Ahead Logging (WAL) with <code>fsync</code>-guaranteed durability. Crash recovery via WAL replay. Deterministic memory — no GC pauses.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon docs"></div>
+                    <h3>Schema-Less</h3>
+                    <p>Store anything as JSON documents. Dot-path field access. Auto-generated UUIDs or custom IDs. Collections self-describe.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon index"></div>
+                    <h3>Index-Powered</h3>
+                    <p>Pluggable field indexes over <code>BTreeMap</code> for equality and range queries. Foundation for future SQL parsing and query optimization.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="code-preview">
+        <div class="container">
+            <h2>Works Everywhere</h2>
+            <div class="tabs">
+                <div class="tab-header">
+                    <button class="tab-btn active" data-lang="rs">Rust</button>
+                    <button class="tab-btn" data-lang="js">JavaScript</button>
+                    <button class="tab-btn" data-lang="py">Python</button>
+                    <button class="tab-btn" data-lang="cli">CLI</button>
+                </div>
+                <div class="tab-body">
+                    <pre class="tab-content active" id="code-rs"><code>use nexdb::{NexDb, Document};
+
+#[tokio::main]
+async fn main() -> nexdb::Result&lt;()&gt; {
+    let db = NexDb::open("app.nexdb").await?;
+    db.create_collection("users").await?;
+
+    let doc = Document::from_json(r#"{
+        "name": "Alice",
+        "age": 30,
+        "tags": ["admin", "dev"]
+    }"#)?;
+
+    db.insert("users", "u1", doc).await?;
+    let user = db.get("users", "u1").await?;
+    println!("{}", user);
+    Ok(())
+}</code></pre>
+                    <pre class="tab-content" id="code-js"><code>const { NexDb } = require('nexdb');
+
+const db = new NexDb('app.nexdb');
+await db.connect();
+
+await db.createCollection('users');
+
+const id = await db.insertAutoId('users', {
+    name: 'Alice',
+    age: 30,
+    tags: ['admin', 'dev'],
+});
+
+const user = await db.get('users', id);
+console.log(user);
+
+await db.close();</code></pre>
+                    <pre class="tab-content" id="code-py"><code>from nexdb import NexDb
+
+db = NexDb('app.nexdb')
+
+db.create_collection('users')
+
+user_id = db.insert_auto_id('users', {
+    'name': 'Alice',
+    'age': 30,
+    'tags': ['admin', 'dev'],
+})
+
+user = db.get('users', user_id)
+print(user)
+
+db.close()</code></pre>
+                    <pre class="tab-content" id="code-cli"><code># Start an interactive REPL
+nexdb repl app.nexdb
+# Then send JSON commands:
+{"cmd":"create_collection","args":{"name":"users"}}
+{"cmd":"insert","args":{"collection":"users","id":"u1","document":{"name":"Alice","age":30}}}
+{"cmd":"get","args":{"collection":"users","id":"u1"}}
+{"cmd":"exit"}
+
+# Or use one-shot commands directly:
+nexdb create-collection app.nexdb users
+nexdb insert app.nexdb users u1 '{"name":"Alice","age":30}'
+nexdb get app.nexdb users u1</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats">
+        <div class="container">
+            <div class="stat">
+                <span class="num">0</span>
+                <span class="label">GC Pauses</span>
+            </div>
+            <div class="stat">
+                <span class="num">1</span>
+                <span class="label">File on Disk</span>
+            </div>
+            <div class="stat">
+                <span class="num">3</span>
+                <span class="label">Language Bindings</span>
+            </div>
+            <div class="stat">
+                <span class="num">100%</span>
+                <span class="label">Safe Rust</span>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>NexDb — Built with Rust. Licensed MIT.</p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

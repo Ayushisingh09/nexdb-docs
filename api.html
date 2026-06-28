@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference — NexDb</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">Nex<span>Db</span></a>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="getting-started.html">Docs</a>
+                <a href="architecture.html">Architecture</a>
+                <a href="api.html" class="active">API</a>
+                <a href="https://github.com/nexdb/nexdb" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="docs-page">
+        <div class="container">
+            <aside class="sidebar">
+                <h3>API Reference</h3>
+                <ul>
+                    <li><a href="#nexdb">NexDb</a></li>
+                    <li><a href="#document">Document</a></li>
+                    <li><a href="#collection">Collection</a></li>
+                    <li><a href="#wal">WAL</a></li>
+                    <li><a href="#index">Index</a></li>
+                    <li><a href="#errors">Error Handling</a></li>
+                </ul>
+            </aside>
+
+            <article class="content">
+                <h1>API Reference</h1>
+
+                <section id="nexdb">
+                    <h2>NexDb</h2>
+                    <p>The main database handle. All operations are async.</p>
+
+                    <h3><code>NexDb::open(path) -> Result&lt;NexDb&gt;</code></h3>
+                    <p>Open or create a database at the given path. Replays the WAL if the file exists.</p>
+
+                    <h3>Collection Management</h3>
+                    <table>
+                        <thead><tr><th>Method</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>create_collection(name)</code></td><td>Create a new collection</td></tr>
+                            <tr><td><code>drop_collection(name)</code></td><td>Drop a collection and all its documents</td></tr>
+                            <tr><td><code>list_collections() -> Vec&lt;String&gt;</code></td><td>List all collection names</td></tr>
+                            <tr><td><code>has_collection(name) -> bool</code></td><td>Check if a collection exists</td></tr>
+                        </tbody>
+                    </table>
+
+                    <h3>CRUD Operations</h3>
+                    <table>
+                        <thead><tr><th>Method</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>insert(coll, id, doc)</code></td><td>Insert with explicit ID. Errors on duplicate.</td></tr>
+                            <tr><td><code>insert_auto_id(coll, doc) -> String</code></td><td>Insert with auto-generated UUID v4 ID.</td></tr>
+                            <tr><td><code>get(coll, id) -> Document</code></td><td>Get a document by ID. Errors if not found.</td></tr>
+                            <tr><td><code>update(coll, id, doc)</code></td><td>Replace an existing document.</td></tr>
+                            <tr><td><code>delete(coll, id)</code></td><td>Delete a document by ID.</td></tr>
+                            <tr><td><code>count(coll) -> usize</code></td><td>Count documents in a collection.</td></tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Query Operations</h3>
+                    <table>
+                        <thead><tr><th>Method</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>find(coll, predicate) -> Vec&lt;(String, Document)&gt;</code></td><td>Scan all documents with a predicate closure.</td></tr>
+                            <tr><td><code>find_eq(coll, index, value) -> Vec&lt;(String, Document)&gt;</code></td><td>Indexed equality lookup.</td></tr>
+                            <tr><td><code>find_range(coll, index, low, high) -> Vec&lt;(String, Document)&gt;</code></td><td>Indexed range lookup.</td></tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Index Operations</h3>
+                    <table>
+                        <thead><tr><th>Method</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>create_index(coll, name, field)</code></td><td>Create a field index on a dot-path.</td></tr>
+                            <tr><td><code>drop_index(coll, name)</code></td><td>Drop an index.</td></tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Persistence</h3>
+                    <table>
+                        <thead><tr><th>Method</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>flush()</code></td><td>Force WAL fsync.</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section id="document">
+                    <h2>Document</h2>
+                    <p>Wraps <code>serde_json::Value</code>. Represents a JSON document.</p>
+
+                    <h3>Construction</h3>
+                    <table>
+                        <thead><tr><th>Method</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>Document::new()</code></td><td>Create an empty document <code>{}</code></td></tr>
+                            <tr><td><code>Document::from_json(str) -> Result</code></td><td>Parse from JSON string.</td></tr>
+                            <tr><td><code>Document::from_value(Value) -> Self</code></td><td>Wrap a <code>serde_json::Value</code>.</td></tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Field Access</h3>
+                    <table>
+                        <thead><tr><th>Method</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>get(field) -> Option&lt;&amp;Value&gt;</code></td><td>Get a top-level field.</td></tr>
+                            <tr><td><code>get_path(path) -> Option&lt;&amp;Value&gt;</code></td><td>Get a nested field via dot-path (<code>"address.city"</code>).</td></tr>
+                            <tr><td><code>set(field, value) -> Option&lt;Value&gt;</code></td><td>Set a top-level field.</td></tr>
+                            <tr><td><code>remove(field) -> Option&lt;Value&gt;</code></td><td>Remove a top-level field.</td></tr>
+                            <tr><td><code>fields() -> Vec&lt;String&gt;</code></td><td>List all top-level field names.</td></tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Serialization</h3>
+                    <table>
+                        <thead><tr><th>Method</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>to_json() -> String</code></td><td>Compact JSON string.</td></tr>
+                            <tr><td><code>to_json_pretty() -> String</code></td><td>Pretty-printed JSON string.</td></tr>
+                            <tr><td><code>into_inner() -> Value</code></td><td>Consume and return inner <code>serde_json::Value</code>.</td></tr>
+                            <tr><td><code>as_value() -> &amp;Value</code></td><td>Borrow inner value.</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section id="collection">
+                    <h2>Collection</h2>
+                    <p>A named group of documents. Direct use is not required — all operations go through <code>NexDb</code>.</p>
+
+                    <table>
+                        <thead><tr><th>Method</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>insert(id, doc) -> Result</code></td><td>Insert document. Errors on duplicate.</td></tr>
+                            <tr><td><code>get(id) -> Option&lt;&amp;Document&gt;</code></td><td>Get document by ID.</td></tr>
+                            <tr><td><code>update(id, doc) -> Result</code></td><td>Replace document. Errors if missing.</td></tr>
+                            <tr><td><code>delete(id) -> Result</code></td><td>Delete document. Errors if missing.</td></tr>
+                            <tr><td><code>find(predicate) -> Vec&lt;(String, Document)&gt;</code></td><td>Scan with predicate closure.</td></tr>
+                            <tr><td><code>count() -> usize</code></td><td>Number of documents.</td></tr>
+                            <tr><td><code>add_index(name, field) -> Result</code></td><td>Create a field index.</td></tr>
+                            <tr><td><code>remove_index(name) -> Option</code></td><td>Drop an index.</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section id="wal">
+                    <h2>WAL (Write-Ahead Log)</h2>
+                    <p>Internal persistence layer. Most users never interact with <code>WalWriter</code> or <code>WalReader</code> directly.</p>
+
+                    <table>
+                        <thead><tr><th>Type</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>WalEntry</code></td><td>A single WAL record with timestamp, collection, operation, ID, and document.</td></tr>
+                            <tr><td><code>WalWriter</code></td><td>Appends entries to the WAL file with fsync.</td></tr>
+                            <tr><td><code>WalReader</code></td><td>Reads and replays WAL entries for crash recovery.</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section id="index">
+                    <h2>FieldIndex</h2>
+                    <p>An inverted index mapping field values to document IDs.</p>
+
+                    <table>
+                        <thead><tr><th>Method</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>new(name, field_path) -> Self</code></td><td>Create a new index on a field path.</td></tr>
+                            <tr><td><code>insert(doc_id, doc)</code></td><td>Index a document.</td></tr>
+                            <tr><td><code>remove(doc_id, doc)</code></td><td>Remove a document from the index.</td></tr>
+                            <tr><td><code>find_eq(value) -> Vec&lt;String&gt;</code></td><td>Find document IDs with exact field value.</td></tr>
+                            <tr><td><code>find_range(low, high) -> Vec&lt;String&gt;</code></td><td>Find document IDs with field value in range.</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section id="errors">
+                    <h2>Error Handling</h2>
+                    <p>All fallible operations return <code>Result&lt;T, NexDbError&gt;</code>.</p>
+
+                    <table>
+                        <thead><tr><th>Error Variant</th><th>When It Occurs</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>NotFound(String)</code></td><td>Document or index not found.</td></tr>
+                            <tr><td><code>Duplicate(String)</code></td><td>Insert with an existing document ID.</td></tr>
+                            <tr><td><code>CollectionNotFound(String)</code></td><td>Operation on a non-existent collection.</td></tr>
+                            <tr><td><code>CollectionAlreadyExists(String)</code></td><td>Creating a collection that already exists.</td></tr>
+                            <tr><td><code>Serialization(String)</code></td><td>JSON parse failure.</td></tr>
+                            <tr><td><code>Io(std::io::Error)</code></td><td>Filesystem error (WAL write, etc.).</td></tr>
+                            <tr><td><code>Wal(String)</code></td><td>WAL integrity or lock error.</td></tr>
+                            <tr><td><code>InvalidOperation(String)</code></td><td>Invalid state transition.</td></tr>
+                            <tr><td><code>Index(String)</code></td><td>Index creation or query error.</td></tr>
+                            <tr><td><code>Json(serde_json::Error)</code></td><td>Auto-converted serde_json error.</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+            </article>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>NexDb — Built with Rust. Licensed MIT.</p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
