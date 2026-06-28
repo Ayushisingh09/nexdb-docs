@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NexDB – The Redis × SQLite hybrid for Rust</title>
+  <title>NexDB – Redis × SQLite hybrid for Rust</title>
+  <meta name="description" content="Embeddable, lightning-fast document database combining Redis-speed caching with SQLite-durable persistence. Written in Rust.">
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 </head>
@@ -11,179 +12,280 @@
 
 <nav class="navbar">
   <div class="container">
-    <a href="/" class="logo">Nex<span>DB</span></a>
+    <a href="/" class="logo"><span class="logo-icon">⚡</span>Nex<span style="color:var(--accent)">DB</span></a>
     <div class="nav-links">
       <a href="/">Home</a>
       <a href="getting-started.html">Docs</a>
       <a href="api.html">API</a>
       <a href="architecture.html">Architecture</a>
+      <a href="https://github.com/Ayushisingh09/NexDB-Core" target="_blank" style="color:var(--text-muted)">GitHub</a>
+      <a href="getting-started.html" class="nav-cta">Get Started</a>
     </div>
   </div>
 </nav>
 
 <section class="hero">
   <div class="container">
-    <h1>Embeddable, lightning-fast document database <br class="hide-mobile">with Redis caching &amp; SQLite persistence</h1>
-    <p class="subtitle">
-      NexDB combines the developer experience of <strong>MongoDB</strong> (documents, collections, dynamic queries),
-      the speed of <strong>Redis</strong> (in-memory WAL + optional caching), and the reliability of
-      <strong>SQLite</strong> (durable SQLite persistence) – all in a single Rust crate.
-    </p>
-    <div class="hero-buttons">
-      <a href="getting-started.html" class="btn btn-primary">Get Started</a>
-      <a href="api.html" class="btn btn-secondary">API Reference</a>
-    </div>
-    <div class="install-cmd">
-      <span class="prompt">$</span> cargo add nexdb-core
-      <span class="divider">|</span>
-      <span class="prompt">$</span> cargo nexdb serve --db mydb.nex
+    <div class="hero-grid">
+      <div>
+        <span class="tag">v0.1.0 — Now in Beta</span>
+        <h1>
+          The speed of <span class="highlight">Redis</span>.<br>
+          The reliability of <span class="highlight">SQLite</span>.<br>
+          <span class="gradient-text">All in one Rust crate.</span>
+        </h1>
+        <p class="hero-sub">
+          An embedded document database that combines MongoDB-style collections and queries,
+          Redis-speed in-memory caching with WAL persistence, and SQLite-durable storage —
+          with zero external dependencies and a single <code>cargo add</code>.
+        </p>
+        <div class="hero-buttons">
+          <a href="getting-started.html" class="btn btn-primary">
+            Get Started &nbsp;→
+          </a>
+          <a href="api.html" class="btn btn-secondary">
+            API Reference
+          </a>
+          <a href="https://github.com/Ayushisingh09/NexDB-Core" target="_blank" class="btn btn-ghost">
+            GitHub ↗
+          </a>
+        </div>
+      </div>
+      <div class="hero-code">
+        <code>
+          <span class="hl-m">// Add to Cargo.toml</span><br>
+          <span class="hl-b">cargo</span> <span class="hl-a">add</span> nexdb-core<br><br>
+          <span class="hl-m">// Open database</span><br>
+          <span class="hl-b">let</span> db = <span class="hl-a">NexDb::open</span>(<span class="hl-c">"app.nex"</span>)?;<br><br>
+          <span class="hl-m">// Insert a document</span><br>
+          <span class="hl-b">let</span> id = db.<span class="hl-a">collection</span>(<span class="hl-c">"users"</span>)<br>
+          &nbsp;&nbsp;.insert(<span class="hl-a">json!</span>({<span class="hl-c">"name"</span>: <span class="hl-c">"Alice"</span>, <span class="hl-c">"age"</span>: <span class="hl-d">30</span>}))?;<br><br>
+          <span class="hl-m">// Query with filters</span><br>
+          <span class="hl-b">let</span> results = db.<span class="hl-a">collection</span>(<span class="hl-c">"users"</span>)<br>
+          &nbsp;&nbsp;.query()<br>
+          &nbsp;&nbsp;.<span class="hl-a">where_clause</span>(<span class="hl-c">r#"{"age": {"$gte": 21}}"#</span>)?<br>
+          &nbsp;&nbsp;.<span class="hl-a">sort</span>(<span class="hl-c">"name"</span>, <span class="hl-b">true</span>)<br>
+          &nbsp;&nbsp;.<span class="hl-a">limit</span>(<span class="hl-d">20</span>)<br>
+          &nbsp;&nbsp;.run()?;
+        </code>
+      </div>
     </div>
   </div>
 </section>
 
-<section class="features" id="features">
+<section class="section" id="features">
   <div class="container">
-    <h2>Everything you need, out of the box</h2>
+    <div class="section-header">
+      <span class="tag">Features</span>
+      <h2>Everything you expect from a modern database</h2>
+      <p>NexDB packs 12+ features into a single Rust crate — no orchestrator, no daemon, no fuss.</p>
+    </div>
     <div class="feature-grid">
       <div class="feature-card">
-        <div class="icon" style="background:rgba(88,166,255,.12);color:var(--accent)">📄</div>
+        <div class="icon" style="border-color:rgba(255,68,56,.25);color:var(--accent)">📄</div>
         <h3>Document Store</h3>
-        <p>Schemaless JSON documents with dynamic queries, indexes, and collection management.</p>
+        <p>Schemaless JSON documents with dynamic queries. Collections, indexes, and full CRUD out of the box.</p>
       </div>
       <div class="feature-card">
-        <div class="icon" style="background:rgba(63,185,80,.12);color:var(--accent2)">⚡</div>
+        <div class="icon" style="border-color:rgba(63,185,80,.25);color:var(--accent2)">⚡</div>
         <h3>WAL + Checkpoint</h3>
-        <p>Append-only write-ahead log with snapshot-based checkpointing for crash-safety.</p>
+        <p>Append-only write-ahead log with snapshot checkpointing. Crash-safe by default.</p>
       </div>
       <div class="feature-card">
-        <div class="icon" style="background:rgba(210,168,255,.12);color:var(--accent3)">📡</div>
+        <div class="icon" style="border-color:rgba(88,166,255,.25);color:var(--accent3)">📡</div>
         <h3>TCP Server</h3>
-        <p>Built-in <code>serve</code> command — connect over TCP with line-delimited JSON.</p>
+        <p>Built-in <code>serve</code> command. Connect over TCP with JSON-line protocol. Optional JWT auth.</p>
       </div>
       <div class="feature-card">
-        <div class="icon" style="background:rgba(255,68,56,.12);color:var(--redis)">🔍</div>
+        <div class="icon" style="border-color:rgba(210,168,255,.25);color:var(--accent4)">🔍</div>
         <h3>Query Builder</h3>
-        <p>Fluent <code>.where()</code>, <code>.sort()</code>, <code>.limit()</code> API with optional JSON filter parsing.</p>
+        <p>Fluent <code>.where()</code>, <code>.sort()</code>, <code>.limit()</code> API with MongoDB-style operator support.</p>
       </div>
       <div class="feature-card">
-        <div class="icon" style="background:rgba(71,163,255,.12);color:var(--sqlite)">🗄️</div>
-        <h3>Indexes</h3>
-        <p>B-tree indexes on any document path for high-performance lookups.</p>
+        <div class="icon" style="border-color:rgba(255,68,56,.25);color:var(--accent)">🗄️</div>
+        <h3>B-tree Indexes</h3>
+        <p>In-memory B-tree indexes on any document path. Automatic query optimization.</p>
       </div>
       <div class="feature-card">
-        <div class="icon" style="background:rgba(63,185,80,.12);color:var(--accent2)">🔐</div>
+        <div class="icon" style="border-color:rgba(63,185,80,.25);color:var(--accent2)">🔐</div>
         <h3>Auth &amp; JWT</h3>
-        <p>API key management and JWT-based authentication for cloud deployments.</p>
+        <p>API key management and JWT authentication for secure TCP deployments.</p>
       </div>
       <div class="feature-card">
-        <div class="icon" style="background:rgba(210,168,255,.12);color:var(--accent3)">📦</div>
+        <div class="icon" style="border-color:rgba(88,166,255,.25);color:var(--accent3)">📦</div>
         <h3>Import / Export</h3>
-        <p>Bulk import &amp; export of JSON and CSV data from the CLI and programmatically.</p>
+        <p>Bulk JSON and CSV import/export from the CLI. Pipeline data in seconds.</p>
       </div>
       <div class="feature-card">
-        <div class="icon" style="background:rgba(255,68,56,.12);color:var(--redis)">🧩</div>
+        <div class="icon" style="border-color:rgba(210,168,255,.25);color:var(--accent4)">🧩</div>
         <h3>BSON Support</h3>
         <p>Optional binary document decoding via the <code>bson</code> feature flag.</p>
       </div>
       <div class="feature-card">
-        <div class="icon" style="background:rgba(71,163,255,.12);color:var(--sqlite)">🔄</div>
+        <div class="icon" style="border-color:rgba(255,68,56,.25);color:var(--accent)">🔄</div>
         <h3>Migration Engine</h3>
-        <p>Dump, restore, copy, and auto-import between databases with <code>migrate</code>.</p>
+        <p>Dump, restore, copy, SQL export, and auto-import between databases.</p>
       </div>
       <div class="feature-card">
-        <div class="icon" style="background:rgba(88,166,255,.12);color:var(--accent)">⚙️</div>
+        <div class="icon" style="border-color:rgba(63,185,80,.25);color:var(--accent2)">⚙️</div>
         <h3>Shell Completions</h3>
-        <p>Generate auto-completions for bash, zsh, fish, PowerShell, and elvish.</p>
+        <p>Auto-completions for bash, zsh, fish, PowerShell, and elvish.</p>
       </div>
       <div class="feature-card">
-        <div class="icon" style="background:rgba(63,185,80,.12);color:var(--accent2)">📊</div>
+        <div class="icon" style="border-color:rgba(88,166,255,.25);color:var(--accent3)">📊</div>
         <h3>Benchmarked</h3>
         <p>Criterion-based benchmark suite for CRUD and WAL throughput.</p>
       </div>
       <div class="feature-card">
-        <div class="icon" style="background:rgba(210,168,255,.12);color:var(--accent3)">🧹</div>
+        <div class="icon" style="border-color:rgba(210,168,255,.25);color:var(--accent4)">🧹</div>
         <h3>Clean Command</h3>
-        <p>Remove database files individually or wipe all databases in a directory.</p>
+        <p>Remove database files individually or bulk-wipe all databases in a directory.</p>
       </div>
     </div>
   </div>
 </section>
 
-<section class="code-preview" id="quickstart">
+<section class="code-section section">
   <div class="container">
-    <h2>See it in action</h2>
-    <div class="tabs">
+    <div class="section-header">
+      <span class="tag">Code</span>
+      <h2>See it in action</h2>
+      <p>Choose your interface — Rust API, CLI, or TCP protocol. All backed by the same engine.</p>
+    </div>
+    <div class="tabs-wrapper">
       <div class="tab-header">
-        <button class="tab-btn active" data-tab="tab-rust">Rust</button>
-        <button class="tab-btn" data-tab="tab-cli">CLI</button>
-        <button class="tab-btn" data-tab="tab-tcp">TCP</button>
+        <button class="tab-btn active" data-tab="tab-rust">🦀 Rust</button>
+        <button class="tab-btn" data-tab="tab-cli">💻 CLI</button>
+        <button class="tab-btn" data-tab="tab-tcp">🌐 TCP</button>
       </div>
       <div class="tab-body">
-        <div class="tab-content active" id="tab-rust"><code><span style="color:var(--accent2)">use</span> nexdb_core::NexDb;
+        <div class="tab-content active" id="tab-rust"><code><span class="kw">use</span> nexdb_core::NexDb;
 
-<span style="color:var(--text-muted)">// Open or create a database</span>
-<span style="color:var(--accent)">let</span> db = NexDb::open(<span style="color:var(--accent3)">"mydb.nex"</span>)?;
+<span class="c">// Open or create — one line</span>
+<span class="kw">let</span> db = <span class="fn">NexDb::open</span>(<span class="s">"mydb.nex"</span>)?;
 
-<span style="color:var(--text-muted)">// Insert a document</span>
-<span style="color:var(--accent)">let</span> doc = db.collection(<span style="color:var(--accent3)">"users"</span>).insert(
-  serde_json::json!({<span style="color:var(--accent3)">"name"</span>: <span style="color:var(--accent3)">"Alice"</span>, <span style="color:var(--accent3)">"age"</span>: <span style="color:#79c0ff">30</span>})
-)?;
+<span class="c">// Collection CRUD</span>
+<span class="kw">let</span> col = db.<span class="fn">collection</span>(<span class="s">"users"</span>);
+<span class="kw">let</span> id = col.<span class="fn">insert</span>(<span class="fn">json!</span>({<span class="s">"name"</span>: <span class="s">"Alice"</span>, <span class="n">30</span>}))?;
+<span class="kw">let</span> doc = col.<span class="fn">get</span>(&amp;id)?;
+col.<span class="fn">update</span>(&amp;id, <span class="fn">json!</span>({<span class="s">"name"</span>: <span class="s">"Alice"</span>, <span class="s">"age"</span>: <span class="n">31</span>}))?;
+col.<span class="fn">delete</span>(&amp;id)?;
 
-<span style="color:var(--text-muted)">// Query with the builder</span>
-<span style="color:var(--accent)">let</span> results = db.collection(<span style="color:var(--accent3)">"users"</span>)
-  .query()
-  .where_clause(<span style="color:var(--accent3)">r#"{"age": {"$gte": 21}}"#</span>)?
-  .sort(<span style="color:var(--accent3)">"name"</span>, <span style="color:#79c0ff">true</span>)
-  .limit(<span style="color:#79c0ff">10</span>)
-  .run()?;
+<span class="c">// Query with the builder</span>
+<span class="kw">let</span> results = col
+    .<span class="fn">query</span>()
+    .<span class="fn">where_clause</span>(<span class="s">r#"{"age": {"$gte": 21, "$lt": 65}}"#</span>)?
+    .<span class="fn">sort</span>(<span class="s">"name"</span>, <span class="kw">true</span>)
+    .<span class="fn">skip</span>(<span class="n">0</span>)
+    .<span class="fn">limit</span>(<span class="n">20</span>)
+    .<span class="fn">run</span>()?;
 
-<span style="color:var(--text-muted)">// WebSocket dashboard &amp; analytics built in</span>
-<span style="color:var(--accent)">let</span> snapshot = db.analytics().snapshot()?;
-println!(<span style="color:var(--accent3)">"DB has {} documents"</span>, snapshot.documents_total);</code></div>
-        <div class="tab-content" id="tab-cli"><code><span style="color:var(--text-muted)"># Insert and query</span>
-cargo nexdb insert mydb.nex users <span style="color:var(--accent3)">'{"name":"Bob","age":25}'</span>
-cargo nexdb query mydb.nex users <span style="color:var(--accent3)">'{"age":{"$gte":21}}'</span>
+<span class="c">// Create an index</span>
+col.<span class="fn">create_index</span>(<span class="s">"age"</span>)?;</code></div>
+        <div class="tab-content" id="tab-cli"><code><span class="c"># Insert and query</span>
+cargo nexdb insert mydb.nex users <span class="s">'{"name":"Bob","age":25}'</span>
+cargo nexdb get mydb.nex users &lt;id&gt;
+cargo nexdb query mydb.nex users <span class="s">'{"age":{"$gte":21}}'</span>
 
-<span style="color:var(--text-muted)"># Serve over TCP</span>
-cargo nexdb serve --db mydb.nex --port <span style="color:#79c0ff">9480</span>
+<span class="c"># Serve over TCP</span>
+cargo nexdb serve --db mydb.nex --port <span class="n">9480</span>
 
-<span style="color:var(--text-muted)"># Import / Export</span>
+<span class="c"># Import / Export</span>
 cargo nexdb import mydb.nex users data.json
 cargo nexdb export mydb.nex users data.json
+cargo nexdb import-csv mydb.nex users data.csv
 
-<span style="color:var(--text-muted)"># Migrate between databases</span>
-cargo nexdb migrate dump mydb.nex dump.json
-cargo nexdb migrate restore newdb.nex dump.json
-cargo nexdb migrate to-sql mydb.nex schema.sql</code></div>
-        <div class="tab-content" id="tab-tcp"><code><span style="color:var(--text-muted)"># Start the server</span>
-cargo nexdb serve --db mydb.nex --port <span style="color:#79c0ff">9480</span>
+<span class="c"># Migrate between databases</span>
+cargo nexdb migrate dump mydb.nex backup.json
+cargo nexdb migrate restore newdb.nex backup.json
+cargo nexdb migrate to-sql mydb.nex schema.sql
 
-<span style="color:var(--text-muted)"># Connect with netcat</span>
-$ nc localhost <span style="color:#79c0ff">9480</span>
+<span class="c"># Shell completions</span>
+cargo nexdb completions bash &gt; completions.sh
 
-<span style="color:var(--text-muted)"># Every line is a JSON-RPC style request:</span>
-{<span style="color:var(--accent3)">"method"</span>:<span style="color:var(--accent3)">"insert"</span>,<span style="color:var(--accent3)">"params"</span>:{<span style="color:var(--accent3)">"collection"</span>:<span style="color:var(--accent3)">"users"</span>,<span style="color:var(--accent3)">"document"</span>:{<span style="color:var(--accent3)">"name"</span>:<span style="color:var(--accent3)">"Charlie"</span>,<span style="color:var(--accent3)">"age"</span>:<span style="color:#79c0ff">35</span>}}}
-{<span style="color:var(--accent3)">"ok"</span>:<span style="color:#79c0ff">true</span>,<span style="color:var(--accent3)">"id"</span>:<span style="color:var(--accent3)">"a1b2c3..."</span>}
+<span class="c"># Clean &amp; checkpoint</span>
+cargo nexdb checkpoint mydb.nex
+cargo nexdb clean mydb.nex</code></div>
+        <div class="tab-content" id="tab-tcp"><code><span class="c"># Start the server</span>
+$ cargo nexdb serve --db mydb.nex --port <span class="n">9480</span>
 
-{<span style="color:var(--accent3)">"method"</span>:<span style="color:var(--accent3)">"query"</span>,<span style="color:var(--accent3)">"params"</span>:{<span style="color:var(--accent3)">"collection"</span>:<span style="color:var(--accent3)">"users"</span>,<span style="color:var(--accent3)">"filter"</span>:{<span style="color:var(--accent3)">"age"</span>:{<span style="color:var(--accent3)">"$gte"</span>:<span style="color:#79c0ff">21</span>}}}}
-{<span style="color:var(--accent3)">"ok"</span>:<span style="color:#79c0ff">true</span>,<span style="color:var(--accent3)">"documents"</span>:[...]}</code></div>
+<span class="c"># Connect with nc</span>
+$ nc localhost <span class="n">9480</span>
+
+<span class="c"># Every line is a JSON-RPC request:</span>
+{<span class="s">"method"</span>: <span class="s">"insert"</span>, <span class="s">"params"</span>: {
+  <span class="s">"collection"</span>: <span class="s">"users"</span>,
+  <span class="s">"document"</span>: {<span class="s">"name"</span>: <span class="s">"Charlie"</span>, <span class="s">"age"</span>: <span class="n">35</span>}
+}}
+<span class="c"># Response:</span>
+{<span class="s">"ok"</span>: <span class="kw">true</span>, <span class="s">"id"</span>: <span class="s">"a1b2c3..."</span>}
+
+{<span class="s">"method"</span>: <span class="s">"query"</span>, <span class="s">"params"</span>: {
+  <span class="s">"collection"</span>: <span class="s">"users"</span>,
+  <span class="s">"filter"</span>: {<span class="s">"age"</span>: {<span class="s">"$gte"</span>: <span class="n">21</span>}}
+}}
+<span class="c"># Response:</span>
+{<span class="s">"ok"</span>: <span class="kw">true</span>, <span class="s">"documents"</span>: [...]}</code></div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="stats">
+<section class="stats-section section">
   <div class="container">
-    <div class="stat"><span class="num">12+</span><span class="label">Features</span></div>
-    <div class="stat"><span class="num">0</span><span class="label">External Dependencies (core)</span></div>
-    <div class="stat"><span class="num">52</span><span class="label">Source Files</span></div>
-    <div class="stat"><span class="num">3</span><span class="label">Deployment Flavors</span></div>
+    <div class="section-header">
+      <span class="tag">By the numbers</span>
+      <h2>Built for real workloads</h2>
+    </div>
+    <div class="stats-grid">
+      <div class="stat">
+        <span class="stat-num">12+</span>
+        <span class="stat-label">Features</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">0</span>
+        <span class="stat-label">External Dependencies</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">52</span>
+        <span class="stat-label">Source Files</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">3</span>
+        <span class="stat-label">Deployment Flavors</span>
+      </div>
+    </div>
   </div>
 </section>
 
-<footer>
+<section class="cta-section">
   <div class="container">
-    <p>NexDB &mdash; MIT License &mdash; Built with Rust &amp; ❤️</p>
+    <span class="tag">Ready to build?</span>
+    <h2>Start building in <span class="gradient-text">minutes</span></h2>
+    <p>Add one line to your <code>Cargo.toml</code> and you're up and running. No servers to configure. No daemons to manage.</p>
+    <div class="cta-buttons">
+      <a href="getting-started.html" class="btn btn-primary">Get Started →</a>
+      <a href="api.html" class="btn btn-secondary">Read the API Docs</a>
+    </div>
+    <div style="margin-top:28px">
+      <code style="background:var(--bg-card);padding:14px 24px;border-radius:var(--radius-sm);display:inline-block;border:1px solid var(--border);font-size:.85rem;color:var(--text-secondary)">
+        <span style="color:var(--accent2)">$</span> cargo add nexdb-core
+      </code>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-copy">
+      NexDB &mdash; MIT License &mdash; Built with <span class="heart">♥</span> in Rust
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/Ayushisingh09/NexDB-Core" target="_blank">GitHub</a>
+      <a href="getting-started.html">Docs</a>
+      <a href="api.html">API</a>
+      <a href="architecture.html">Architecture</a>
+    </div>
   </div>
 </footer>
 
