@@ -3,22 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Getting Started – NexDB</title>
-  <meta name="description" content="Installation guide, quick start, CRUD operations, query builder, indexes, WAL, TCP server, import/export, migration, completions, clean command, BSON support, and benchmarks for NexDB.">
+  <title>Getting Started — NexDB</title>
+  <meta name="description" content="Install NexDB, write your first application, and explore every feature — Rust API, CLI, query builder, indexes, WAL, TCP server, import/export, migration, and more.">
   <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23f54242'/><path d='M10 10h4l4 12 4-12h4' stroke='%23fff' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 </head>
 <body>
 
 <nav class="navbar">
   <div class="container">
-    <a href="/" class="logo"><span class="logo-icon">⚡</span>Nex<span style="color:var(--accent)">DB</span></a>
+    <a href="/" class="logo">
+      <span class="logo-mark"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+      Nex<span style="color:var(--red)">DB</span>
+    </a>
     <div class="nav-links">
       <a href="/">Home</a>
       <a href="getting-started.html" class="active">Docs</a>
       <a href="api.html">API</a>
       <a href="architecture.html">Architecture</a>
-      <a href="https://github.com/Ayushisingh09/NexDB-Core" target="_blank" style="color:var(--text-muted)">GitHub</a>
+      <a href="https://github.com/Ayushisingh09/NexDB-Core" target="_blank">GitHub</a>
       <a href="getting-started.html" class="nav-cta">Get Started</a>
     </div>
   </div>
@@ -26,16 +29,16 @@
 
 <div class="container docs-layout">
   <aside class="docs-sidebar">
-    <h3>Getting Started</h3>
+    <h3>Contents</h3>
     <ul>
       <li><a href="#installation">Installation</a></li>
       <li><a href="#quick-start">Quick Start</a></li>
       <li><a href="#crud">CRUD Operations</a></li>
       <li><a href="#query-builder">Query Builder</a></li>
       <li><a href="#indexes">Indexes</a></li>
-      <li><a href="#wal">WAL &amp; Checkpoint</a></li>
+      <li><a href="#wal">WAL and Checkpoint</a></li>
       <li><a href="#serve">TCP Server</a></li>
-      <li><a href="#import-export">Import / Export</a></li>
+      <li><a href="#import-export">Import and Export</a></li>
       <li><a href="#migrate">Migration Engine</a></li>
       <li><a href="#completions">Shell Completions</a></li>
       <li><a href="#clean">Clean Command</a></li>
@@ -48,7 +51,7 @@
   <article class="docs-content">
 
     <h1>Getting Started</h1>
-    <p class="lead">Everything you need to install NexDB, write your first application, and use every feature — from the Rust API to the CLI to the TCP server.</p>
+    <p class="lead">Everything you need to install NexDB, write your first application, and work with every feature from the Rust API to the CLI to the TCP server.</p>
 
     <section id="installation">
       <h2>Installation</h2>
@@ -56,34 +59,32 @@
       <pre><code>[dependencies]
 nexdb-core = "0.1.0"
 serde_json = "1.0"</code></pre>
-      <p>Enable optional BSON support:</p>
+      <p>Enable optional BSON decoding:</p>
       <pre><code>nexdb-core = { version = "0.1.0", features = ["bson"] }</code></pre>
       <p>Install the CLI tool:</p>
       <pre><code>cargo install nexdb-cli</code></pre>
-      <p>Or run directly with <code>cargo run</code>:</p>
+      <p>Or run directly:</p>
       <pre><code>cargo nexdb --help</code></pre>
     </section>
 
     <section id="quick-start">
       <h2>Quick Start</h2>
-      <p>Open a database, insert a document, and query it — in under 10 lines of Rust:</p>
+      <p>Open a database, insert a document, and query it in under ten lines of Rust:</p>
       <pre><code>use nexdb_core::NexDb;
 
 fn main() -> Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
     let db = NexDb::open("mydb.nex")?;
-
     let collection = db.collection("users");
     let id = collection.insert(serde_json::json!({
         "name": "Alice",
         "age": 30,
         "city": "Berlin"
     }))?;
-
     let user = collection.get(&amp;id)?;
     println!("Found: {}", user);
     Ok(())
 }</code></pre>
-      <p>Same thing via the CLI:</p>
+      <p>Same operation from the CLI:</p>
       <pre><code>cargo nexdb insert mydb.nex users '{"name":"Alice","age":30,"city":"Berlin"}'
 cargo nexdb get mydb.nex users &lt;id&gt;</code></pre>
     </section>
@@ -112,42 +113,32 @@ cargo nexdb get mydb.nex users &lt;id&gt;</code></pre>
 }</code></pre>
 
       <h3>Count</h3>
-      <pre><code>let count = collection.count()?;
-println!("{} documents", count);</code></pre>
+      <pre><code>let count = collection.count()?;</code></pre>
 
       <h3>Exists</h3>
       <pre><code>if collection.exists(&amp;id)? {
-    println!("Document exists");
+    println!("document exists");
 }</code></pre>
     </section>
 
     <section id="query-builder">
       <h2>Query Builder</h2>
-      <p>The <code>QueryBuilder</code> provides a fluent API for composing rich queries with filters, sorting, and pagination — inspired by MongoDB's query language.</p>
-
-      <pre><code>use nexdb_core::query::QueryBuilder;
-
-let results: Vec&lt;serde_json::Value&gt; = collection
+      <p>The <code>QueryBuilder</code> provides a fluent API for composing rich queries with filters, sorting, and pagination, inspired by the MongoDB query language.</p>
+      <pre><code>let results: Vec&lt;serde_json::Value&gt; = collection
     .query()
     .where_clause(r#"{"age": {"$gte": 21, "$lt": 65}, "city": "Berlin"}"#)?
     .sort("name", true)
     .skip(0)
     .limit(20)
     .run()?;</code></pre>
-
-      <p>You can also pass a parsed <code>serde_json::Value</code> directly:</p>
+      <p>You can also pass a pre-parsed <code>serde_json::Value</code>:</p>
       <pre><code>let filter: serde_json::Value =
     serde_json::from_str(r#"{"age": {"$gte": 21}}"#)?;
-let results = collection
-    .query()
-    .where_value(&amp;filter)?
-    .run()?;</code></pre>
+let results = collection.query().where_value(&amp;filter)?.run()?;</code></pre>
 
-      <h3>Supported Operators</h3>
+      <h3>Supported operators</h3>
       <table>
-        <thead>
-          <tr><th>Operator</th><th>Description</th><th>Example</th></tr>
-        </thead>
+        <thead><tr><th>Operator</th><th>Description</th><th>Example</th></tr></thead>
         <tbody>
           <tr><td><code>$eq</code></td><td>Equal (default)</td><td><code>{"age": 30}</code></td></tr>
           <tr><td><code>$ne</code></td><td>Not equal</td><td><code>{"age": {"$ne": 30}}</code></td></tr>
@@ -155,7 +146,7 @@ let results = collection
           <tr><td><code>$gte</code></td><td>Greater than or equal</td><td><code>{"age": {"$gte": 18}}</code></td></tr>
           <tr><td><code>$lt</code></td><td>Less than</td><td><code>{"age": {"$lt": 65}}</code></td></tr>
           <tr><td><code>$lte</code></td><td>Less than or equal</td><td><code>{"age": {"$lte": 99}}</code></td></tr>
-          <tr><td><code>$in</code></td><td>In array</td><td><code>{"city": {"$in": ["Berlin","Munich"]}}</code></td></tr>
+          <tr><td><code>$in</code></td><td>In array</td><td><code>{"city": {"$in": ["Berlin", "Munich"]}}</code></td></tr>
           <tr><td><code>$nin</code></td><td>Not in array</td><td><code>{"city": {"$nin": ["Paris"]}}</code></td></tr>
           <tr><td><code>$exists</code></td><td>Field exists</td><td><code>{"email": {"$exists": true}}</code></td></tr>
           <tr><td><code>$regex</code></td><td>Regex match</td><td><code>{"name": {"$regex": "^Ali"}}</code></td></tr>
@@ -165,43 +156,36 @@ let results = collection
 
     <section id="indexes">
       <h2>Indexes</h2>
-      <p>B-tree indexes accelerate queries on document fields. Created and managed per-collection.</p>
-
-      <pre><code>// Create an index on the "age" field
+      <p>B-tree indexes accelerate queries on document fields. They are created and managed per collection.</p>
+      <pre><code>// create an index on the "age" field
 collection.create_index("age")?;
 collection.create_index("address.city")?;
 
-// Query automatically uses the index
+// query automatically uses the index
 let results = collection.query()
     .where_clause(r#"{"age": {"$gte": 21}}"#)?
     .run()?;
 
-// List and drop
+// list and drop
 let indexes = collection.list_indexes()?;
 collection.drop_index("age")?;</code></pre>
-
-      <p>Without an index: full collection scan (<code>O(n)</code>). With an index on the filtered field: <code>O(log n)</code> via the B-tree. Indexes are maintained automatically on insert, update, and delete.</p>
+      <p>Without an index, queries perform a full collection scan running in <code>O(n)</code>. With an index on the filtered field, lookups are <code>O(log n)</code> via the B-tree. Indexes are maintained automatically on insert, update, and delete.</p>
     </section>
 
     <section id="wal">
-      <h2>WAL &amp; Checkpoint</h2>
+      <h2>WAL and Checkpoint</h2>
       <p>NexDB uses a write-ahead log to guarantee crash safety. Every mutation is written to the WAL <em>before</em> it is applied in memory.</p>
-
-      <pre><code>// WAL is enabled by default — automatic and transparent
-// Manually checkpoint (snapshot + truncate WAL)
+      <pre><code>// WAL is enabled by default
+// manually checkpoint (snapshot + truncate WAL)
 db.checkpoint()?;</code></pre>
-
-      <p><strong>Automatic recovery:</strong> On <code>NexDb::open()</code>, if a WAL file (<code>mydb.nex.wal</code>) exists alongside the database file, all pending entries are replayed before the database is made available.</p>
-
-      <p><strong>Checkpointing</strong> serializes the full in-memory state as a snapshot entry and truncates the WAL. Call periodically to keep the WAL file size bounded. Safe to call at any time.</p>
+      <p><strong>Automatic recovery.</strong> On <code>NexDb::open()</code>, if a WAL file (<code>mydb.nex.wal</code>) exists, all pending entries are replayed before the database becomes available. No data loss.</p>
+      <p><strong>Checkpointing</strong> serializes the full in-memory state as a snapshot entry and truncates the WAL. Call periodically to bound WAL file size. Safe to call at any time.</p>
     </section>
 
     <section id="serve">
       <h2>TCP Server</h2>
       <p>Start a TCP server that accepts JSON-line requests:</p>
-
       <pre><code>cargo nexdb serve --db mydb.nex --port 9480 --host 127.0.0.1</code></pre>
-
       <p>Each line is a JSON object with <code>method</code> and <code>params</code>:</p>
       <pre><code>{"method":"insert","params":{"collection":"users","document":{"name":"Charlie","age":35}}}
 {"method":"get","params":{"collection":"users","id":"a1b2c3..."}}
@@ -209,31 +193,27 @@ db.checkpoint()?;</code></pre>
 {"method":"delete","params":{"collection":"users","id":"a1b2c3..."}}
 {"method":"count","params":{"collection":"users"}}
 {"method":"all","params":{"collection":"users"}}</code></pre>
-
-      <p>Responses are JSON-line objects:</p>
+      <p>Responses are one JSON object per request:</p>
       <pre><code>{"ok":true,"id":"a1b2c3..."}
 {"ok":true,"document":{...}}
 {"ok":true,"documents":[...]}
 {"ok":true,"count":42}
-{"ok":false,"error":"Document not found"}</code></pre>
-
+{"ok":false,"error":"document not found"}</code></pre>
       <p>Enable JWT authentication:</p>
       <pre><code>cargo nexdb serve --db mydb.nex --require-auth --jwt-secret "mysecret"</code></pre>
       <p>Clients include an <code>"auth"</code> field with their JWT token in each request.</p>
     </section>
 
     <section id="import-export">
-      <h2>Import / Export</h2>
-      <p>Bulk operations for JSON and CSV formats. The CLI commands are straightforward:</p>
-
+      <h2>Import and Export</h2>
+      <p>Bulk operations for JSON and CSV formats from the CLI:</p>
       <pre><code># JSON
 cargo nexdb import mydb.nex users data.json
 cargo nexdb export mydb.nex users data.json
 
-# CSV (first row = headers)
+# CSV (first row must be headers)
 cargo nexdb import-csv mydb.nex users data.csv
 cargo nexdb export-csv mydb.nex users data.csv</code></pre>
-
       <p>Programmatic equivalents:</p>
       <pre><code>let docs = db.collection("users").all()?;
 let json = serde_json::to_value(&amp;docs)?;
@@ -243,70 +223,63 @@ std::fs::write("users.json",
 
     <section id="migrate">
       <h2>Migration Engine</h2>
-      <p>The <code>migrate</code> command family handles moving data between databases and generating SQL schemas.</p>
-
-      <pre><code># Dump to portable JSON interchange format
+      <p>The <code>migrate</code> command family moves data between databases and generates SQL schemas.</p>
+      <pre><code># dump to portable JSON interchange
 cargo nexdb migrate dump mydb.nex backup.json
 
-# Restore into a new or existing database
+# restore into a new or existing database
 cargo nexdb migrate restore newdb.nex backup.json
 
-# Copy directly between two databases
+# copy directly between two databases
 cargo nexdb migrate copy source.nex target.nex
 
-# Generate SQL schema (CREATE TABLE + INSERT)
+# generate SQL schema (CREATE TABLE + INSERT)
 cargo nexdb migrate to-sql mydb.nex schema.sql
 
-# Auto-import — detect format and import
+# auto-import (detects JSON, CSV, or dump format)
 cargo nexdb migrate auto-import mydb.nex data.json</code></pre>
-
       <p>Programmatic usage:</p>
       <pre><code>use nexdb_core::migrate::MigrationEngine;
 
 let engine = MigrationEngine::new(&amp;db);
 engine.dump_to_file("backup.json")?;
 engine.restore_from_file("backup.json")?;
-let sql = engine.to_sql()?;
-println!("{}", sql);</code></pre>
+let sql = engine.to_sql()?;</code></pre>
     </section>
 
     <section id="completions">
       <h2>Shell Completions</h2>
-      <p>Generate auto-completion scripts for your shell so you never have to type a full command again.</p>
-
-      <pre><code># Bash
+      <p>Generate auto-completion scripts for your shell:</p>
+      <pre><code># bash
 cargo nexdb completions bash > /etc/bash_completion.d/nexdb
 
-# Zsh
+# zsh
 cargo nexdb completions zsh > /usr/local/share/zsh/site-functions/_nexdb
 
-# Fish
+# fish
 cargo nexdb completions fish > ~/.config/fish/completions/nexdb.fish
 
-# PowerShell
+# powershell
 cargo nexdb completions powershell > profile.ps1
 
-# Elvish
+# elvish
 cargo nexdb completions elvish > ~/.elvish/completions.eld</code></pre>
     </section>
 
     <section id="clean">
       <h2>Clean Command</h2>
-      <p>Remove database files cleanly when they are no longer needed.</p>
-
-      <pre><code># Remove a specific database + its WAL
+      <p>Remove database files when they are no longer needed:</p>
+      <pre><code># remove a specific database and its WAL
 cargo nexdb clean mydb.nex
 
-# Remove ALL NexDB databases in a directory
+# remove ALL NexDB databases in a directory
 cargo nexdb clean --all ./data/</code></pre>
     </section>
 
     <section id="cli">
       <h2>CLI Reference</h2>
       <table>
-        <thead>
-          <tr><th>Command</th><th>Description</th></tr>
-        </thead>
+        <thead><tr><th>Command</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td><code>insert</code></td><td>Insert a document</td></tr>
           <tr><td><code>get</code></td><td>Get document by ID</td></tr>
@@ -338,25 +311,20 @@ cargo nexdb clean --all ./data/</code></pre>
     <section id="bson">
       <h2>BSON Support</h2>
       <p>When the <code>bson</code> feature is enabled, NexDB can decode BSON binary documents into its internal JSON representation.</p>
-
-      <pre><code>[dependencies]
-nexdb-core = { version = "0.1.0", features = ["bson"] }</code></pre>
-
-      <p>BSON documents inserted via the TCP server or programmatic API are automatically decoded. The feature is <strong>off by default</strong>, keeping the dependency footprint minimal.</p>
+      <pre><code>nexdb-core = { version = "0.1.0", features = ["bson"] }</code></pre>
+      <p>BSON documents inserted via the TCP server or programmatic API are decoded automatically. The feature is off by default, keeping the dependency footprint minimal.</p>
     </section>
 
     <section id="benchmarks">
       <h2>Benchmarks</h2>
-      <p>NexDB includes a criterion benchmark suite. Run it to see real-world performance on your hardware.</p>
-
-      <pre><code># Run all benchmarks
+      <p>NexDB includes a criterion benchmark suite. Run it to measure performance on your hardware.</p>
+      <pre><code># run all benchmarks
 cargo bench
 
-# Run a specific benchmark group
+# run a specific group
 cargo bench --bench crud
 cargo bench --bench wal</code></pre>
-
-      <p>Benchmarks cover: insert throughput, read latency, update performance, delete performance, indexed queries, and WAL write throughput. Results are reported in operations/second with latency percentiles.</p>
+      <p>The suite covers: insert throughput, read latency, update and delete performance, indexed queries, and WAL write throughput. Results are reported in operations per second with latency percentiles.</p>
     </section>
 
   </article>
@@ -364,9 +332,7 @@ cargo bench --bench wal</code></pre>
 
 <footer class="footer">
   <div class="container">
-    <div class="footer-copy">
-      NexDB &mdash; MIT License
-    </div>
+    <div class="footer-copy">NexDB &mdash; MIT License</div>
     <div class="footer-links">
       <a href="https://github.com/Ayushisingh09/NexDB-Core" target="_blank">GitHub</a>
       <a href="getting-started.html">Docs</a>

@@ -1,44 +1,54 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // Tab switcher
-    const tabButtons = document.querySelectorAll('.tab-btn');
-    tabButtons.forEach(btn => {
-        btn.addEventListener('click', function () {
-            const target = this.dataset.tab;
-            const parent = this.closest('.tabs-wrapper, .tabs');
-            if (!parent) return;
-            parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            parent.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            this.classList.add('active');
-            const el = parent.querySelector('#' + target);
-            if (el) el.classList.add('active');
-        });
+  /* ── Tab switcher ── */
+  document.querySelectorAll('.tab-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var target = this.dataset.tab;
+      var parent = this.closest('.tabs-wrap, .tabs');
+      if (!parent) return;
+      parent.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); });
+      parent.querySelectorAll('.tab-content').forEach(function (c) { c.classList.remove('active'); });
+      this.classList.add('active');
+      var el = parent.querySelector('#' + target);
+      if (el) el.classList.add('active');
     });
+  });
 
-    // Sidebar active state
-    const sidebarLinks = document.querySelectorAll('.docs-sidebar a');
-    sidebarLinks.forEach(link => {
-        link.addEventListener('click', function () {
-            sidebarLinks.forEach(l => l.classList.remove('active'));
-            this.classList.add('active');
-        });
+  /* ── Sidebar active tracking ── */
+  var sidebarLinks = document.querySelectorAll('.docs-sidebar a');
+  sidebarLinks.forEach(function (link) {
+    link.addEventListener('click', function () {
+      sidebarLinks.forEach(function (l) { l.classList.remove('active'); });
+      this.classList.add('active');
     });
+  });
 
-    // Highlight current section in sidebar on scroll
-    const sections = document.querySelectorAll('section[id]');
-    if (sections.length > 0 && sidebarLinks.length > 0) {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const id = entry.target.id;
-                    sidebarLinks.forEach(link => {
-                        link.classList.remove('active');
-                        if (link.getAttribute('href') === '#' + id) {
-                            link.classList.add('active');
-                        }
-                    });
-                }
-            });
-        }, { rootMargin: '-80px 0px -60% 0px' });
-        sections.forEach(s => observer.observe(s));
-    }
+  var sections = document.querySelectorAll('section[id]');
+  if (sections.length && sidebarLinks.length) {
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          var id = entry.target.id;
+          sidebarLinks.forEach(function (link) {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + id) link.classList.add('active');
+          });
+        }
+      });
+    }, { rootMargin: '-80px 0px -60% 0px' });
+    sections.forEach(function (s) { observer.observe(s); });
+  }
+
+  /* ── Scroll reveal animation ── */
+  var animEls = document.querySelectorAll('.animate-in');
+  if (animEls.length) {
+    var animObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          animObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    animEls.forEach(function (el) { animObserver.observe(el); });
+  }
 });
