@@ -1,238 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Architecture — NexDb</title>
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Architecture – NexDB</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <a href="index.html" class="logo">Nex<span>Db</span></a>
-            <div class="nav-links">
-                <a href="index.html">Home</a>
-                <a href="getting-started.html">Docs</a>
-                <a href="architecture.html" class="active">Architecture</a>
-                <a href="api.html">API</a>
-                <a href="https://github.com/nexdb/nexdb" target="_blank">GitHub</a>
-            </div>
+
+<nav class="navbar">
+  <div class="container">
+    <a href="/" class="logo">Nex<span>DB</span></a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="getting-started.html">Docs</a>
+      <a href="api.html">API</a>
+      <a href="architecture.html" class="active">Architecture</a>
+    </div>
+  </div>
+</nav>
+
+<div class="docs-page">
+  <div class="container">
+    <aside class="sidebar">
+      <h3>Architecture</h3>
+      <ul>
+        <li><a href="#overview" class="active">Overview</a></li>
+        <li><a href="#storage">Storage Engine</a></li>
+        <li><a href="#wal">WAL &amp; Checkpoint</a></li>
+        <li><a href="#concurrency">Concurrency Model</a></li>
+        <li><a href="#indexing">Indexing</a></li>
+        <li><a href="#query">Query Engine</a></li>
+        <li><a href="#server">TCP Server</a></li>
+        <li><a href="#migrate">Migration Engine</a></li>
+        <li><a href="#format">File Format</a></li>
+      </ul>
+    </aside>
+
+    <article class="content">
+
+      <h1>Architecture</h1>
+
+      <section id="overview">
+        <h2>Overview</h2>
+        <p>NexDB is an embedded document database for Rust. At its core, it is an in-memory document store backed by a persistent write-ahead log (WAL) and optional SQLite durability.</p>
+
+        <div class="arch-diagram">
+          <pre>
+┌─────────────────────────────────────────────────────────┐
+│                      NexDB Instance                      │
+│                                                          │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐ │
+│  │Collection │  │Collection │  │Collection │  │   ...    │ │
+│  │  "users"  │  │ "orders"  │  │ "items"   │  │          │ │
+│  └─────┬────┘  └─────┬────┘  └─────┬────┘  └──────────┘ │
+│        │              │             │                     │
+│  ┌─────┴──────────────┴─────────────┴───────────────┐   │
+│  │              In-Memory Document Store             │   │
+│  │   (HashMap&lt;String, HashMap&lt;String, Value&gt;&gt;)      │   │
+│  └───────────────────────┬───────────────────────────┘   │
+│                          │                                │
+│  ┌───────────────────────┴───────────────────────────┐   │
+│  │              Write-Ahead Log (WAL)                 │   │
+│  │   Append-only JSON lines, replayed on startup      │   │
+│  └───────────────────────┬───────────────────────────┘   │
+│                          │                                │
+│  ┌───────────────────────┴───────────────────────────┐   │
+│  │              Checkpoint Manager                    │   │
+│  │   Snapshots in-memory state &amp; truncates WAL        │   │
+│  └───────────────────────┬───────────────────────────┘   │
+│                          │                                │
+│  ┌───────────────────────┴───────────────────────────┐   │
+│  │              Query Builder &amp; Index Engine          │   │
+│  │   B-tree indexes, filter parsing, sorting, limit   │   │
+│  └───────────────────────┬───────────────────────────┘   │
+│                          │                                │
+│  ┌───────────────────────┴───────────────────────────┐   │
+│  │              TCP Server (optional)                 │   │
+│  │   JSON-line protocol, JWT auth, connection pool    │   │
+│  └───────────────────────┬───────────────────────────┘   │
+│                          │                                │
+│  ┌───────────────────────┴───────────────────────────┐   │
+│  │              Migration Engine                      │   │
+│  │   Dump, restore, copy, SQL export, auto-import     │   │
+│  └───────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘</pre>
         </div>
-    </nav>
+      </section>
 
-    <main class="docs-page">
-        <div class="container">
-            <aside class="sidebar">
-                <h3>Architecture</h3>
-                <ul>
-                    <li><a href="#overview">Overview</a></li>
-                    <li><a href="#storage-engine">Storage Engine</a></li>
-                    <li><a href="#wal">Write-Ahead Log</a></li>
-                    <li><a href="#concurrency">Concurrency Model</a></li>
-                    <li><a href="#indexing">Indexing Layer</a></li>
-                    <li><a href="#threading">Threading Model</a></li>
-                    <li><a href="#file-format">File Format</a></li>
-                </ul>
-            </aside>
+      <section id="storage">
+        <h2>Storage Engine</h2>
+        <p>The storage engine is the heart of NexDB. It manages a collection of named <em>collections</em>, each of which contains a set of <em>documents</em>, both indexed by their <code>_id</code> field.</p>
 
-            <article class="content">
-                <h1>Architecture</h1>
+        <h3>In-Memory Store</h3>
+        <p>Documents are stored in a nested <code>HashMap</code> structure:</p>
+        <pre><code>type Store = HashMap&lt;String, HashMap&lt;String, Value&gt;&gt;;
+//           collection name ──┘              │
+//                     document ID ────────────┘</code></pre>
+        <p>This provides O(1) average-case lookup by collection and document ID. The entire store is kept in memory for maximum read performance.</p>
 
-                <section id="overview">
-                    <h2>System Overview</h2>
-                    <p>NexDb is an <strong>in-memory-first, embeddable, document-oriented database</strong> written entirely in safe Rust.
-                    It combines a lock-free (no GC) memory model with a Write-Ahead Log for durability.</p>
+        <h3>Persistence</h3>
+        <p>Persistence is achieved through the WAL. Every mutation is appended to the WAL file before being applied in memory. On restart, the WAL is replayed to reconstruct the in-memory state.</p>
+      </section>
 
-                    <div class="arch-diagram">
-                        <pre>
- ┌─────────────────────────────────────────────────────┐
- │                   Application Code                    │
- ├─────────────────────────────────────────────────────┤
- │             Rust API  │  npm  │  pip  │  CLI          │
- ├─────────────────────────────────────────────────────┤
- │                   NexDb Library                       │
- │  ┌─────────────┐  ┌──────────┐  ┌────────────────┐  │
- │  │  Collection  │  │  Index   │  │  Document       │  │
- │  │  Manager     │  │  Manager │  │  (serde_json)   │  │
- │  └──────┬──────┘  └────┬─────┘  └────────────────┘  │
- │         │              │                              │
- │  ┌──────┴──────────────┴────────────────────────┐    │
- │  │         Storage Engine (RwLock + Arc)          │    │
- │  │  ┌───────────┐  ┌───────────┐  ┌───────────┐  │    │
- │  │  │ BTreeMap   │  │ RwLock    │  │ Arc       │  │    │
- │  │  │ per Coll.  │  │ per Coll. │  │ sharing   │  │    │
- │  │  └───────────┘  └───────────┘  └───────────┘  │    │
- │  └──────────────────────┬─────────────────────────┘    │
- │                         │                              │
- │  ┌──────────────────────┴─────────────────────────┐    │
- │  │         Write-Ahead Log (WAL)                   │    │
- │  │  ┌──────────────┐  ┌──────────────┐             │    │
- │  │  │ WalWriter    │  │ WalReader    │             │    │
- │  │  │ (append+sync)│  │ (replay)     │             │    │
- │  │  └──────┬───────┘  └──────┬───────┘             │    │
- │  └─────────┼──────────────────┼────────────────────┘    │
- │            │                  │                          │
- └────────────┼──────────────────┼──────────────────────────┘
-              │                  │
-         ┌────┴─────┐      ┌────┴─────┐
-         │ .nexdb   │      │ Memory   │
-         │ (WAL)    │      │ (primary)│
-         └──────────┘      └──────────┘</pre>
-                    </div>
-                </section>
+      <section id="wal">
+        <h2>WAL &amp; Checkpoint</h2>
 
-                <section id="storage-engine">
-                    <h2>Storage Engine</h2>
-                    <p>The storage engine is organized as a two-level map:</p>
-                    <pre><code>NexDb {
-    collections: RwLock&lt;HashMap&lt;String, Arc&lt;RwLock&lt;Collection&gt;&gt;&gt;&gt;,
-    wal:         Mutex&lt;WalWriter&gt;,
-    path:        PathBuf,
-}
+        <h3>Write-Ahead Log</h3>
+        <p>Each mutation generates a JSON line in the WAL file (<code>dbname.nex.wal</code>). The format is:</p>
+        <pre><code>{"type":"Insert","id":"uuid","document":{...}}
+{"type":"Update","id":"uuid","document":{...}}
+{"type":"Delete","id":"uuid"}</code></pre>
+        <p>On <code>NexDb::open()</code>, all WAL entries are replayed in order. This guarantees that no committed write is lost, even after a crash.</p>
 
-Collection {
-    name: String,
-    docs: BTreeMap&lt;String, Document&gt;,
-    index_manager: IndexManager,
+        <h3>Checkpointing</h3>
+        <p>Over time, the WAL grows as more mutations are applied. The <code>checkpoint()</code> method:</p>
+        <ol>
+          <li>Serializes the entire in-memory store to a new WAL file as a single <code>Snapshot</code> entry</li>
+          <li>Truncates the existing WAL</li>
+          <li>Future mutations are appended to the fresh WAL</li>
+        </ol>
+        <p>This keeps WAL file size bounded while preserving full crash-safety. Checkpointing is safe to call at any time and does not block reads.</p>
+      </section>
+
+      <section id="concurrency">
+        <h2>Concurrency Model</h2>
+        <p>The <code>NexDb</code> instance is guarded by a <code>Mutex</code> from <code>std::sync</code>. All public API methods acquire the lock internally:</p>
+        <pre><code>pub struct NexDb {
+    inner: Mutex&lt;NexDbInner&gt;,
+    ...
 }</code></pre>
+        <p>This design was chosen for simplicity and safety. Each operation holds the lock for the duration of the operation (read or write). In practice, operations are fast (in-memory + WAL append), so contention is low for most workloads.</p>
+        <p>For the TCP server, each connection runs on its own thread and acquires the lock per request. This allows concurrent reads while serializing writes through the mutex.</p>
+      </section>
 
-                    <h3>Key Design Decisions</h3>
-                    <ul>
-                        <li><strong>BTreeMap over HashMap</strong>: Ordered iteration enables range scans and prefix queries.
-                        The O(log n) insert/lookup cost is negligible for in-memory workloads.</li>
-                        <li><strong>Two-level locking</strong>: The outer <code>RwLock</code> guards the collection registry (write-locked only for
-                        DDL). The per-collection <code>RwLock</code> allows concurrent reads on the same collection while serializing writes.</li>
-                        <li><strong>Arc sharing</strong>: Cloning the <code>Arc</code> lets operations hold a reference to a collection
-                        without keeping the registry lock, preventing lock convoy on the central map.</li>
-                    </ul>
-                </section>
+      <section id="indexing">
+        <h2>Indexing</h2>
+        <p>NexDB supports B-tree indexes on document fields for efficient querying:</p>
+        <ul>
+          <li><strong>B-tree structure</strong>: indexes are implemented as in-memory B-trees using the <code>btreemap</code> module</li>
+          <li><strong>Field paths</strong>: indexes can be created on simple fields (<code>"age"</code>) or nested paths (<code>"address.city"</code>)</li>
+          <li><strong>Automatic maintenance</strong>: indexes are updated transparently on insert, update, and delete</li>
+          <li><strong>Query optimization</strong>: when a query filter includes an indexed field, the index is used for the lookup and then results are filtered further</li>
+        </ul>
+        <p>Without an applicable index, queries perform a full collection scan (O(n)). With an index on the filtered field, lookups are O(log n) via the B-tree.</p>
+      </section>
 
-                <section id="wal">
-                    <h2>Write-Ahead Log (WAL)</h2>
-                    <p>Every mutation passes through the WAL <em>before</em> modifying in-memory state.</p>
+      <section id="query">
+        <h2>Query Engine</h2>
+        <p>The <code>QueryBuilder</code> provides a fluent API for composing queries:</p>
 
-                    <h3>WAL Format</h3>
-                    <p>The WAL is an append-only JSON-lines file. Each line is a self-describing entry:</p>
-                    <pre><code>{"ts":1719571200,"c":"users","op":"insert","id":"u1","doc":{"name":"Alice","age":30}}
-{"ts":1719571201,"c":"users","op":"update","id":"u1","doc":{"name":"Alice","age":31}}
-{"ts":1719571202,"c":"users","op":"delete","id":"u1","doc":null}</code></pre>
+        <h3>Filter Operators</h3>
+        <table>
+          <thead>
+            <tr><th>Operator</th><th>Description</th><th>Example</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>$eq</code></td><td>Equal (default if no operator given)</td><td><code>{"age": 30}</code></td></tr>
+            <tr><td><code>$ne</code></td><td>Not equal</td><td><code>{"age": {"$ne": 30}}</code></td></tr>
+            <tr><td><code>$gt</code></td><td>Greater than</td><td><code>{"age": {"$gt": 21}}</code></td></tr>
+            <tr><td><code>$gte</code></td><td>Greater than or equal</td><td><code>{"age": {"$gte": 18}}</code></td></tr>
+            <tr><td><code>$lt</code></td><td>Less than</td><td><code>{"age": {"$lt": 65}}</code></td></tr>
+            <tr><td><code>$lte</code></td><td>Less than or equal</td><td><code>{"age": {"$lte": 99}}</code></td></tr>
+            <tr><td><code>$in</code></td><td>In array</td><td><code>{"city": {"$in": ["Berlin","Munich"]}}</code></td></tr>
+            <tr><td><code>$nin</code></td><td>Not in array</td><td><code>{"city": {"$nin": ["Paris"]}}</code></td></tr>
+            <tr><td><code>$exists</code></td><td>Field exists (true/false)</td><td><code>{"email": {"$exists": true}}</code></td></tr>
+            <tr><td><code>$regex</code></td><td>Regular expression match</td><td><code>{"name": {"$regex": "^Ali"}}</code></td></tr>
+          </tbody>
+        </table>
 
-                    <h3>Write Path</h3>
-                    <ol>
-                        <li>Acquire <strong>collection write lock</strong></li>
-                        <li>Serialize the <strong>WalEntry</strong> (with timestamp, operation, document)</li>
-                        <li>Acquire <strong>WAL mutex</strong></li>
-                        <li><code>write_all()</code> + <code>sync_all()</code> (fsync) to disk</li>
-                        <li>Release WAL mutex</li>
-                        <li>Apply mutation to <strong>in-memory BTreeMap</strong></li>
-                        <li>Update <strong>indexes</strong></li>
-                        <li>Release collection write lock</li>
-                    </ol>
+        <h3>Query Execution</h3>
+        <p>The query engine processes each document through the filter pipeline, sorts the matching results, applies skip/limit, and returns the result set. When a matching index is found, documents are first narrowed via the index before the full filter is applied.</p>
+      </section>
 
-                    <h3>Recovery Path</h3>
-                    <p>On <code>NexDb::open()</code>:</p>
-                    <ol>
-                        <li>Create empty in-memory state</li>
-                        <li>Open WAL file</li>
-                        <li>Read entries line-by-line</li>
-                        <li>For each entry: create collection if missing, apply insert/update/delete</li>
-                        <li>Result: in-memory state == last committed state</li>
-                    </ol>
-                </section>
+      <section id="server">
+        <h2>TCP Server</h2>
+        <p>The TCP server runs on a dedicated thread and accepts connections using standard <code>std::net::TcpListener</code>. Each connection is handled in its own spawned thread:</p>
+        <pre><code>listener.incoming().for_each(|stream| {
+    let db = db.clone();
+    thread::spawn(move || handle_connection(db, stream));
+});</code></pre>
+        <p>Each line of input is parsed as JSON, routed by the <code>method</code> field to the appropriate handler, and a JSON response is written back. If authentication is enabled via <code>--require-auth</code>, every request is validated against the JWT secret before processing.</p>
+      </section>
 
-                <section id="concurrency">
-                    <h2>Concurrency Model</h2>
+      <section id="migrate">
+        <h2>Migration Engine</h2>
+        <p>The migration engine provides data portability:</p>
+        <ul>
+          <li><strong>Dump/Restore</strong>: serializes all collections to a portable JSON file. The dump format includes metadata (collection names, document counts) along with the documents themselves.</li>
+          <li><strong>Copy</strong>: reads all data from one database and writes it to another, useful for merging or splitting databases.</li>
+          <li><strong>SQL Export</strong>: generates SQL <code>CREATE TABLE</code> and <code>INSERT</code> statements representing the current database state.</li>
+          <li><strong>Auto-Import</strong>: detects the input format (JSON array, CSV with headers, or a dump file) and imports accordingly.</li>
+        </ul>
+      </section>
 
-                    <h3>Lock Hierarchy</h3>
-                    <p>Strict ordering prevents deadlocks:</p>
-                    <table>
-                        <thead>
-                            <tr><th>Level</th><th>Lock</th><th>Protects</th><th>Acquired By</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>1</td><td><code>RwLock</code> (tokio)</td><td>Collection registry <code>HashMap</code></td><td><code>create_collection</code>, <code>drop_collection</code></td></tr>
-                            <tr><td>2</td><td><code>RwLock</code> (tokio)</td><td>Per-collection <code>BTreeMap</code></td><td>All CRUD operations</td></tr>
-                            <tr><td>3</td><td><code>Mutex</code> (tokio)</td><td>WAL file append</td><td>All mutations</td></tr>
-                        </tbody>
-                    </table>
+      <section id="format">
+        <h2>File Format</h2>
+        <p>NexDB uses two files on disk:</p>
+        <table>
+          <thead>
+            <tr><th>File</th><th>Purpose</th><th>Format</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>mydb.nex</code></td><td>SQLite database file (optional durability layer)</td><td>SQLite format</td></tr>
+            <tr><td><code>mydb.nex.wal</code></td><td>Write-ahead log for crash safety</td><td>JSON lines, UTF-8</td></tr>
+          </tbody>
+        </table>
+        <p>The WAL file is the primary durability mechanism. When checkpointing, the WAL is compacted into a snapshot entry and truncated.</p>
+      </section>
 
-                    <h3>Data Race Prevention</h3>
-                    <ul>
-                        <li><strong>Zero <code>unsafe</code></strong>: The entire codebase uses safe Rust. The compiler enforces <code>Send + Sync</code> at compile time.</li>
-                        <li><strong>Ownership discipline</strong>: <code>Collection.docs</code> is only accessible through <code>&amp;self</code> (read lock) or <code>&amp;mut self</code> (write lock) guards obtained from the <code>RwLock</code>.</li>
-                        <li><strong>Arc + Clone</strong>: Documents returned to callers are cloned while holding the lock, then the lock is dropped — no borrowed references escape.</li>
-                    </ul>
+    </article>
+  </div>
+</div>
 
-                    <h3>Contention Under Load</h3>
-                    <ul>
-                        <li><strong>Read-heavy</strong>: Unlimited concurrent readers per collection.</li>
-                        <li><strong>Write-heavy</strong>: Serialized per collection + funneled through global WAL mutex.</li>
-                        <li><strong>Cross-collection</strong>: Fully parallel — different collections have independent locks.</li>
-                    </ul>
-                </section>
+<footer>
+  <div class="container">
+    <p>NexDB &mdash; MIT License</p>
+  </div>
+</footer>
 
-                <section id="indexing">
-                    <h2>Indexing Layer</h2>
-                    <p>Field indexes are implemented as inverted indexes over a <code>BTreeMap</code>:</p>
-
-                    <pre><code>FieldIndex {
-    name: String,
-    field_path: String,       // e.g., "address.city"
-    entries: BTreeMap&lt;String, BTreeSet&lt;String&gt;&gt;,
-    //         field_value_json ──> set of doc_ids
-}</code></pre>
-
-                    <p>Key operations:</p>
-                    <ul>
-                        <li><strong>Insert</strong>: Extract field value via dot-path, serialize to JSON string, add doc ID to set.</li>
-                        <li><strong>Remove</strong>: Reverse of insert.</li>
-                        <li><strong>find_eq</strong>: Direct <code>BTreeMap</code> lookup by exact serialized value.</li>
-                        <li><strong>find_range</strong>: <code>BTreeMap::range(low..=high)</code> — lexicographic ordering of JSON strings.</li>
-                        <li><strong>Rebuild</strong>: Clear and re-insert all documents (used after WAL replay).</li>
-                    </ul>
-                </section>
-
-                <section id="threading">
-                    <h2>Threading Model</h2>
-                    <p>NexDb uses <strong>tokio</strong>'s multi-threaded runtime for async I/O and concurrent request handling.</p>
-
-                    <ul>
-                        <li><strong>Async primitives</strong>: <code>tokio::sync::RwLock</code> and <code>tokio::sync::Mutex</code> are designed to be held across <code>.await</code> points.</li>
-                        <li><strong>I/O offloading</strong>: WAL <code>fsync</code> operations are dispatched to tokio's blocking thread pool, never blocking the async reactor.</li>
-                        <li><strong>Work stealing</strong>: Tokio's work-stealing scheduler automatically balances CRUD operations across available CPU cores.</li>
-                        <li><strong>No <code>unsafe</code></strong>: All thread-safety is guaranteed by Rust's type system, not by manual reasoning.</li>
-                    </ul>
-                </section>
-
-                <section id="file-format">
-                    <h2>File Format (.nexdb)</h2>
-                    <p>The <code>.nexdb</code> file is a plain JSON-lines log. Each line is a complete WAL entry:</p>
-
-                    <table>
-                        <thead>
-                            <tr><th>Field</th><th>Type</th><th>Description</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td><code>ts</code></td><td><code>i64</code></td><td>Unix epoch timestamp (seconds)</td></tr>
-                            <tr><td><code>c</code></td><td><code>string</code></td><td>Collection name</td></tr>
-                            <tr><td><code>op</code></td><td><code>"insert" | "update" | "delete"</code></td><td>Operation type</td></tr>
-                            <tr><td><code>id</code></td><td><code>string</code></td><td>Document ID</td></tr>
-                            <tr><td><code>doc</code></td><td><code>object | null</code></td><td>Document body (null for deletes)</td></tr>
-                        </tbody>
-                    </table>
-
-                    <p>The file is append-only. On recovery, all entries are replayed in order. Future versions will implement WAL checkpointing to prevent unbounded growth.</p>
-                </section>
-            </article>
-        </div>
-    </main>
-
-    <footer>
-        <div class="container">
-            <p>NexDb — Built with Rust. Licensed MIT.</p>
-        </div>
-    </footer>
-
-    <script src="js/main.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>
